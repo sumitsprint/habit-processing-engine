@@ -1,0 +1,25 @@
+Position,Name,Type,Question,Description,FrequencyNumerator,FrequencyDenominator,Color,Unit,Target Type,Target Value,Archived?
+001,(Sun) - clap Push ups + push ups,YES_NO,Did you complete Sun?,Morning workout,1,7,#388E3C,,,,true
+002,(Sun) -- explosive Pushups + Pull Ups + Push ups,YES_NO,Did you do?,,1,7,#388E3C,,,,false
+003,(Sun - Evening) SL-stairs,YES_NO,Did you complete Fri evening workout?,Evening workout,1,7,#D81B60,,,,false
+004,(Mon) - single leg squats,YES_NO,Did you complete Mon?,Morning workout,1,7,#388E3C,,,,false
+005,(Mon - evening) L- sit,YES_NO,Did you complete Monday evening?,,1,7,#D81B60,,,,false
+006,(Tue) - Hanging Leg Raises + ab roller + pull up,YES_NO,Did you do it,,1,7,#D81B60,,,,false
+007,(Tue - evening)  OA Push ups,YES_NO,Did you complete Thu evening workout?,Evening workout,1,7,#D81B60,,,,false
+008,(Tue) - Horizontal Leg Raises,YES_NO,Did you complete Tue?,Morning workout,1,14,#388E3C,,,,true
+009,(Tue) - Ab Roller,YES_NO,Did you complete Tue?,Morning workout,1,14,#388E3C,,,,true
+010,(Wed) - Stairs sprints,YES_NO,Did you complete Wed?,Morning workout,1,21,#388E3C,,,,false
+011,(Wednesday) Ground Sprints,YES_NO,Did you do it,,1,21,#388E3C,,,,false
+012,(Wed) - Shuttle runs,YES_NO,Did you do?,,1,21,#388E3C,,,,false
+013,(Wed- evening) horse stance,YES_NO,Did you complete  Wednesday evening?,Evening workout,1,7,#D81B60,,,,false
+014,(Thu) - Dips,YES_NO,Did you complete Thu?,Morning workout,1,7,#388E3C,,,,false
+015,(Thu - Evening) hip hinge+ sissy squats,YES_NO,Did you complete Thu evening workout?,Evening workout,1,7,#D81B60,,,,false
+016,(Fri) - Plank,YES_NO,Did you complete Fri?,Morning workout,1,7,#388E3C,,,,false
+017,(Fri - Evening) skip rope,YES_NO,Did you complete sunday evening?,Evening workout,1,7,#D81B60,,,,false
+018,(Sat) - Squats,YES_NO,Did you complete Sat?,Morning workout,1,14,#388E3C,,,,false
+019,(Sat) - Lunges,YES_NO,Did you complete Sat?,Morning workout,1,14,#388E3C,,,,false
+020,(Sat- evening) calf,YES_NO,Did you complete sunday evening?,,1,7,#D81B60,,,,false
+021,Brush,NUMERICAL,Did you brush?,,1,1,#039BE5,,AT_LEAST,2.0,false
+022,Sentences,YES_NO,Did you write?,,1,1,#FF8F00,,,,true
+023,Athletes,NUMERICAL,What?,,1,7,#1976D2,,AT_LEAST,10.0,false
+024,Nukes,NUMERICAL,,,1,7,#1976D2,miss,AT_MOST,10.0,false
