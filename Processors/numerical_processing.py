@@ -131,6 +131,7 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
     starting_point = first_engagement_index
     # windows of success and failure and unresolved
     windows = []
+    window_number = 1
     while True:
         provisional_end = starting_point + frequency_denominator
         if provisional_end > len(normalise_df):
@@ -143,80 +144,118 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
     # taking sum of the numerical values in the window and comparing with target value
         running_sum = numeric_values.sum()
         if running_sum >= target_value:
-            windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+            windows.append({
+                "window_number": window_number,
+                "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
                              "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
                               "result": 1,
                               "extension": False})
             # starting point of the next window
             starting_point = provisional_end
+            window_number += 1
     # window extension logic
         
         else:
             skip_count = (window_df["Value"] == "SKIP").sum()
+            
+
        
         # if there are no skip entris no extension 
             if skip_count == 0:
                 unknown_mask = window_df["Value"] == "UNKNOWN"
                 if unknown_mask.any():
-                    windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                                     "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                                      "result": "unresolved",
-                                      "extension": False
-                                      
-                                      })
+                    windows.append({
+                        "window_number": window_number,
+                        "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
+                        "result": "unresolved",
+                        "extension": False
+                    })
                     # starting point of the next window
                     starting_point = provisional_end
+                    window_number += 1
                 else:
-                    windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                                     "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                                      "result": 0,
-                                      "extension": False})
+                    windows.append({
+                        "window_number": window_number,
+                        "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
+                        "result": 0,
+                        "extension": False
+                    })
                     # starting point of the next window
-                    starting_point = provisional_end    
+                    starting_point = provisional_end  
+                    window_number += 1  
  # extend the window by the number of SKIP entries
             else:
-                extended_end = provisional_end + skip_count
+
+                total_skip_count = skip_count
+                extended_end = provisional_end + total_skip_count
                 if extended_end > len(normalise_df):
                     break
                 # slice the extended window and compute sum
                 window_df = normalise_df.iloc[starting_point:extended_end]
+                #recompute skip count in the extended window
+                new_skip_count = (window_df["Value"] == "SKIP").sum()
+                while new_skip_count > total_skip_count:
+                    extended_end = extended_end + new_skip_count - total_skip_count
+                    total_skip_count = new_skip_count
+                    if extended_end > len(normalise_df):
+                        break
+                    window_df = normalise_df.iloc[starting_point:extended_end]
+                    new_skip_count = (window_df["Value"] == "SKIP").sum()
+
                 numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
                 numeric_values = window_df.loc[numeric_mask, "Value"]
                 running_sum = numeric_values.sum()
+                skip_mask = window_df["Value"] == "SKIP"
+                skip_dates = window_df.loc[skip_mask, "Date"] 
+                # here .loc is returning a series
+
             
                 if running_sum >= target_value:
-                    windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                                    "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                                    "result": 1,
-                                    "extension": True,
-                                    "extension_length": skip_count
+                    windows.append({
+                        "window_number": window_number,
+                        "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
+                        "result": 1,
+                        "extension": True,
+                        "extension_length": new_skip_count,
+                        "skip_dates": skip_dates.dt.strftime("%d/%m/%Y").tolist()
+                                    
                                     
                                     })
                     # starting point of the next window
                     starting_point = extended_end
+                    window_number += 1
                 else:
                 # if still not successful, check for UNKNOWN entries in the extended window
                 # and if any UNKNOWN entries are present, discard window 
                 # if no UNKNOWN entries, failure
                     unknown_mask = window_df["Value"] == "UNKNOWN"
                     if unknown_mask.any():
-                        windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                                        "result": "unresolved",
-                                        "extension": True,
-                                        "extension_length": skip_count
-                                        })
+                        windows.append({
+                            "window_number": window_number,
+                            "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+                            "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
+                            "result": "unresolved",
+                            "extension": True,
+                            "extension_length": new_skip_count
+                        })
                         # starting point of the next window
                         starting_point = extended_end
+                        window_number += 1
                     else:
-                        windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                                        "result": 0,
-                                        "extension": True,
-                                        "extension_length": skip_count
+                        windows.append({
+                            "window_number": window_number,
+                            "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+                            "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
+                            "result": 0,
+                            "extension": True,
+                            "extension_length": new_skip_count
                                         })
                         # starting point of the next window
                         starting_point = extended_end
+                        window_number += 1
                     if starting_point >= len(normalise_df):
                         break
                     # handle last partial window if it exists
@@ -226,17 +265,20 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
         numeric_values = window_df.loc[numeric_mask, "Value"]
         running_sum = numeric_values.sum()
         if running_sum >= target_value:
-            windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+            windows.append({"window_number": window_number,
+                "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
                             "result": 1,
                               "extension": False,
                               "partial_window": True})
         else:
-            windows.append({"start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                                      "result": "unresolved",
-                                      "extension": False,
-                                        "partial_window": True
+            windows.append({
+                "window_number": window_number,
+                "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+                "result": "unresolved",
+                "extension": False,
+                "partial_window": True
                                       
-                                      })
+                })
 
 
 
