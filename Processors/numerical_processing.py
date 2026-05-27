@@ -188,21 +188,24 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
  # extend the window by the number of SKIP entries
             else:
 
-                total_skip_count = skip_count
-                extended_end = provisional_end + total_skip_count
+                handled_skip_count = skip_count
+                extended_end = provisional_end + handled_skip_count
                 if extended_end > len(normalise_df):
                     break
                 # slice the extended window and compute sum
                 window_df = normalise_df.iloc[starting_point:extended_end]
                 #recompute skip count in the extended window
-                new_skip_count = (window_df["Value"] == "SKIP").sum()
-                while new_skip_count > total_skip_count:
-                    extended_end = extended_end + new_skip_count - total_skip_count
-                    total_skip_count = new_skip_count
+                current_skip_count = (window_df["Value"] == "SKIP").sum()
+                while current_skip_count > handled_skip_count:
+                    additional_skips = current_skip_count - handled_skip_count
+                    extended_end += additional_skips
+                    handled_skip_count = current_skip_count
                     if extended_end > len(normalise_df):
                         break
                     window_df = normalise_df.iloc[starting_point:extended_end]
-                    new_skip_count = (window_df["Value"] == "SKIP").sum()
+                    current_skip_count = (window_df["Value"] == "SKIP").sum()
+
+                skip_count = current_skip_count    
 
                 numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
                 numeric_values = window_df.loc[numeric_mask, "Value"]
@@ -219,7 +222,7 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
                         "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
                         "result": 1,
                         "extension": True,
-                        "extension_length": new_skip_count,
+                        "extension_length": skip_count,
                         "skip_dates": skip_dates.dt.strftime("%d/%m/%Y").tolist()
                                     
                                     
@@ -239,7 +242,7 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
                             "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
                             "result": "unresolved",
                             "extension": True,
-                            "extension_length": new_skip_count
+                            "extension_length": skip_count
                         })
                         # starting point of the next window
                         starting_point = extended_end
@@ -251,7 +254,7 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
                             "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
                             "result": 0,
                             "extension": True,
-                            "extension_length": new_skip_count
+                            "extension_length": skip_count
                                         })
                         # starting point of the next window
                         starting_point = extended_end
