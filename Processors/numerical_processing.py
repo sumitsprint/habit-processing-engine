@@ -287,6 +287,100 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
 
     return windows 
 
+def build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name):
+    # first active entry
+
+    active_entry_mask = ~normalise_df["Value"].isin(["SKIP", "UNKNOWN"])
+    active_entries_df = normalise_df.loc[active_entry_mask, ["Date", "Value"]]
+    first_active_date = active_entries_df.iloc[0]["Date"].strftime("%d-%m-%Y")
+    first_active_value = active_entries_df.iloc[0]["Value"]
+
+    #latest engagement entry
+
+    engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
+    engagement_entries_df = normalise_df.loc[engagement_mask, ["Date", "Value"]]
+    latest_engagement_date = engagement_entries_df.iloc[-1]["Date"].strftime("%d-%m-%Y")
+    latest_engagement_value = engagement_entries_df.iloc[-1]["Value"]
+
+    #latest complete window status
+    if windows[-1].get("partial_window", False):
+        if len(windows) == 1:
+            latest_complete_window_status = None
+        else:
+            latest_complete_window_status = windows[len(windows) - 2]["result"]
+    else:
+        latest_complete_window_status = windows[-1]["result"]
+
+    unresolved_window_count = 0  
+    success_window_count = 0
+    failure_window_count = 0  
+        #unresolved window count, success window count, failure window count
+    for window in windows:
+        if window["result"] == "unresolved":
+            unresolved_window_count += 1
+        elif window["result"] == 1:
+            success_window_count += 1
+        elif window["result"] == 0:
+            failure_window_count += 1    
+
+
+    partial_window = windows[-1].get("partial_window", False)  
+
+
+
+
+
+
+    behavior_context = {
+        "habit_name": habit_name
+    }
+    #timeline level info
+    behavior_context["first_active_entry"] = {
+        "date": first_active_date,
+        "value": first_active_value
+    }
+    #timeline level info
+    behavior_context["latest_engagement_entry"] = {
+        "date": latest_engagement_date,
+        "value": latest_engagement_value
+    }
+    #window level info
+    behavior_context["latest_complete_window_status"] = latest_complete_window_status
+    behavior_context["unresolved_window_count"] = unresolved_window_count
+
+    #window level info
+    behavior_context["partial_window"] = partial_window
+
+    #window level info
+
+    behavior_context["success_window_count"] = success_window_count
+    behavior_context["failure_window_count"] = failure_window_count
+
+    return behavior_context
+    
+
+
+
+
+
+
+
+
+
+      
+
+    
+
+
+
+
+
+
+
+
+
+    
+
 
 
 
