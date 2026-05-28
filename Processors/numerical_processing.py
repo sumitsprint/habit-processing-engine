@@ -287,7 +287,7 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
 
     return windows 
 
-def build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name):
+def build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name, habit_type):
     # first active entry
 
     active_entry_mask = ~normalise_df["Value"].isin(["SKIP", "UNKNOWN"])
@@ -332,31 +332,38 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
 
 
     behavior_context = {
-        "habit_name": habit_name
-    }
-    #timeline level info
-    behavior_context["first_active_entry"] = {
+        "habit_name": habit_name,
+        "habit_type": habit_type,
+        "frequency_denominator": frequency_denominator,
+        "target_value": target_value,
+
+        #timeline level info
+
+        "first_active_entry": {
         "date": first_active_date,
         "value": first_active_value
-    }
-    #timeline level info
-    behavior_context["latest_engagement_entry"] = {
+                               },
+        "latest_engagement_entry": {
         "date": latest_engagement_date,
         "value": latest_engagement_value
+                                   },
+        #window level info
+
+        "latest_complete_window_status": latest_complete_window_status,
+        "unresolved_window_count": unresolved_window_count,
+        "partial_window": partial_window,
+        "success_window_count": success_window_count,
+        "failure_window_count": failure_window_count
+
+
     }
-    #window level info
-    behavior_context["latest_complete_window_status"] = latest_complete_window_status
-    behavior_context["unresolved_window_count"] = unresolved_window_count
-
-    #window level info
-    behavior_context["partial_window"] = partial_window
-
-    #window level info
-
-    behavior_context["success_window_count"] = success_window_count
-    behavior_context["failure_window_count"] = failure_window_count
+    
+    
 
     return behavior_context
+
+
+
     
 
 
