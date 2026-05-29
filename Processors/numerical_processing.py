@@ -125,6 +125,8 @@ def normalise_numerical_states(timeline_df):
 def extract_evaluate_window(normalise_df, frequency_denominator, target_value, habit_name):
     # engagement entries mask 
     engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
+    if not engagement_mask.any():
+        return []
     #first engagement index
     first_engagement_index = normalise_df[engagement_mask].index[0]
     #starting_point and end of the provisional window
@@ -291,9 +293,14 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
     # first active entry
 
     active_entry_mask = ~normalise_df["Value"].isin(["SKIP", "UNKNOWN"])
-    active_entries_df = normalise_df.loc[active_entry_mask, ["Date", "Value"]]
-    first_active_date = active_entries_df.iloc[0]["Date"].strftime("%d-%m-%Y")
-    first_active_value = active_entries_df.iloc[0]["Value"]
+    if not active_entry_mask.any():
+        
+        first_active_date = None
+        first_active_value = None
+    else:
+        active_entries_df = normalise_df.loc[active_entry_mask, ["Date", "Value"]]
+        first_active_date = active_entries_df.iloc[0]["Date"].strftime("%d-%m-%Y")
+        first_active_value = active_entries_df.iloc[0]["Value"]
 
     #latest engagement entry
 
@@ -325,12 +332,7 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
 
 
     partial_window = windows[-1].get("partial_window", False)  
-
-
-
-
-
-
+    
     behavior_context = {
         "habit_name": habit_name,
         "habit_type": habit_type,
@@ -357,7 +359,6 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
 
 
     }
-    
     
 
     return behavior_context
