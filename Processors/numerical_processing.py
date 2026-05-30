@@ -121,30 +121,54 @@ def normalise_numerical_states(timeline_df):
 
 
 # window extraction and evaluation logic
+def evaluate_window(window_df):
+    numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
+    numeric_values = window_df.loc[numeric_mask, "Value"]
+    running_sum = numeric_values.sum()
+    return running_sum
 
-def extract_evaluate_window(normalise_df, frequency_denominator, target_value, habit_name):
+#skip triggered extension logic 
+def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count):
+    handled_skip_count = skip_count
+    extended_end = provisional_end + handled_skip_count
+    if extended_end > len(normalise_df):
+        return None
+    # slice the extended window and compute sum
+    window_df = normalise_df.iloc[starting_point:extended_end]
+        #recompute skip count in the extended window
+    current_skip_count = (window_df["Value"] == "SKIP").sum()
+    while current_skip_count > handled_skip_count:
+        additional_skips = current_skip_count - handled_skip_count
+        extended_end += additional_skips
+        handled_skip_count = current_skip_count
+        if extended_end > len(normalise_df):
+            break
+        window_df = normalise_df.iloc[starting_point:extended_end]
+        current_skip_count = (window_df["Value"] == "SKIP").sum()
+    return window_df, current_skip_count, extended_end
+
+def extract_window(normalise_df, frequency_denominator, target_value):
     # engagement entries mask 
     engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
     if not engagement_mask.any():
         return []
     #first engagement index
+    # .index returns indices values 
     first_engagement_index = normalise_df[engagement_mask].index[0]
     #starting_point and end of the provisional window
     starting_point = first_engagement_index
     # windows of success and failure and unresolved
     windows = []
     window_number = 1
+    
     while True:
         provisional_end = starting_point + frequency_denominator
         if provisional_end > len(normalise_df):
             break 
     # slice the window
         window_df = normalise_df.iloc[starting_point:provisional_end]
-    # numerical values in the window (active entries)
-        numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
-        numeric_values = window_df.loc[numeric_mask, "Value"]
-    # taking sum of the numerical values in the window and comparing with target value
-        running_sum = numeric_values.sum()
+    # evaluate window
+        running_sum = evaluate_window(window_df)
         if running_sum >= target_value:
             windows.append({
                 "window_number": window_number,
@@ -189,29 +213,16 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
                     window_number += 1  
  # extend the window by the number of SKIP entries
             else:
-
-                handled_skip_count = skip_count
-                extended_end = provisional_end + handled_skip_count
-                if extended_end > len(normalise_df):
+                result = skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count)
+                if result is None:
                     break
-                # slice the extended window and compute sum
-                window_df = normalise_df.iloc[starting_point:extended_end]
-                #recompute skip count in the extended window
-                current_skip_count = (window_df["Value"] == "SKIP").sum()
-                while current_skip_count > handled_skip_count:
-                    additional_skips = current_skip_count - handled_skip_count
-                    extended_end += additional_skips
-                    handled_skip_count = current_skip_count
-                    if extended_end > len(normalise_df):
-                        break
-                    window_df = normalise_df.iloc[starting_point:extended_end]
-                    current_skip_count = (window_df["Value"] == "SKIP").sum()
+                else:
+
+                    window_df, current_skip_count, extended_end = result
 
                 skip_count = current_skip_count    
-
-                numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
-                numeric_values = window_df.loc[numeric_mask, "Value"]
-                running_sum = numeric_values.sum()
+                #evaluate window
+                running_sum = evaluate_window(window_df)
                 skip_mask = window_df["Value"] == "SKIP"
                 skip_dates = window_df.loc[skip_mask, "Date"] 
                 # here .loc is returning a series
@@ -266,9 +277,8 @@ def extract_evaluate_window(normalise_df, frequency_denominator, target_value, h
                     # handle last partial window if it exists
     if starting_point < len(normalise_df):
         window_df = normalise_df.iloc[starting_point:len(normalise_df)]
-        numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
-        numeric_values = window_df.loc[numeric_mask, "Value"]
-        running_sum = numeric_values.sum()
+        # evaluate window
+        running_sum = evaluate_window(window_df)
         if running_sum >= target_value:
             windows.append({"window_number": window_number,
                 "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
