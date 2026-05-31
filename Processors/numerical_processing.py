@@ -174,6 +174,7 @@ def create_window_object(
 
 
 
+
 def making_windows(normalise_df, frequency_denominator, target_value):
     # engagement entries mask 
     engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
@@ -196,6 +197,7 @@ def making_windows(normalise_df, frequency_denominator, target_value):
         window_df = normalise_df.iloc[starting_point:provisional_end]
     # evaluate window
         running_sum = evaluate_window(window_df)
+        # check window status
         if running_sum >= target_value:
 
             window_object = create_window_object(
@@ -211,11 +213,13 @@ def making_windows(normalise_df, frequency_denominator, target_value):
     # window extension logic
         
         else:
+            #check skip count
             skip_count = (window_df["Value"] == "SKIP").sum()
             
 
        
         # if there are no skip entris no extension 
+        
             if skip_count == 0:
                 unknown_mask = window_df["Value"] == "UNKNOWN"
                 if unknown_mask.any():
@@ -256,7 +260,7 @@ def making_windows(normalise_df, frequency_denominator, target_value):
                 # here .loc is returning a series
                 skip_dates = skip_dates.dt.strftime("%d/%m/%Y").tolist()
 
-            
+                # check window status
                 if running_sum >= target_value:
                     window_object = create_window_object(
                                                 window_number,
