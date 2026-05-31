@@ -146,8 +146,35 @@ def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip
         window_df = normalise_df.iloc[starting_point:extended_end]
         current_skip_count = (window_df["Value"] == "SKIP").sum()
     return window_df, current_skip_count, extended_end
+# window object with default params 
+def create_window_object(
+    window_number,
+    window_df,
+    result,
+    extension=False,
+    extension_length=None,
+    skip_dates=None,
+    partial_window=False
+):
+    
+    return{
+                "window_number": window_number,
+                "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
+                "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
+                "result": result,
+                "extension": extension,
+                "extension_length": extension_length,
+                "skip_dates": skip_dates,
+                "partial_window": partial_window
 
-def extract_window(normalise_df, frequency_denominator, target_value):
+
+            }
+
+
+
+
+
+def making_windows(normalise_df, frequency_denominator, target_value):
     # engagement entries mask 
     engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
     if not engagement_mask.any():
@@ -170,12 +197,14 @@ def extract_window(normalise_df, frequency_denominator, target_value):
     # evaluate window
         running_sum = evaluate_window(window_df)
         if running_sum >= target_value:
-            windows.append({
-                "window_number": window_number,
-                "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                             "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                              "result": 1,
-                              "extension": False})
+
+            window_object = create_window_object(
+                                    window_number,
+                                    window_df,
+                                     result=1
+                                            )
+            windows.append(window_object)
+            
             # starting point of the next window
             starting_point = provisional_end
             window_number += 1
@@ -190,24 +219,23 @@ def extract_window(normalise_df, frequency_denominator, target_value):
             if skip_count == 0:
                 unknown_mask = window_df["Value"] == "UNKNOWN"
                 if unknown_mask.any():
-                    windows.append({
-                        "window_number": window_number,
-                        "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                        "result": "unresolved",
-                        "extension": False
-                    })
+                    window_object = create_window_object(
+                                            window_number,
+                                            window_df,
+                                            result="unresolved"
+                                                         )
+                    windows.append(window_object)
+
                     # starting point of the next window
                     starting_point = provisional_end
                     window_number += 1
                 else:
-                    windows.append({
-                        "window_number": window_number,
-                        "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                        "result": 0,
-                        "extension": False
-                    })
+                    window_object = create_window_object(
+                                                window_number,
+                                                window_df,
+                                                result=0
+                                                        )
+                    windows.append(window_object)
                     # starting point of the next window
                     starting_point = provisional_end  
                     window_number += 1  
@@ -226,20 +254,19 @@ def extract_window(normalise_df, frequency_denominator, target_value):
                 skip_mask = window_df["Value"] == "SKIP"
                 skip_dates = window_df.loc[skip_mask, "Date"] 
                 # here .loc is returning a series
+                skip_dates = skip_dates.dt.strftime("%d/%m/%Y").tolist()
 
             
                 if running_sum >= target_value:
-                    windows.append({
-                        "window_number": window_number,
-                        "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                        "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                        "result": 1,
-                        "extension": True,
-                        "extension_length": skip_count,
-                        "skip_dates": skip_dates.dt.strftime("%d/%m/%Y").tolist()
-                                    
-                                    
-                                    })
+                    window_object = create_window_object(
+                                                window_number,
+                                                window_df,
+                                                result=1,
+                                                extension=True,
+                                                extension_length=skip_count,
+                                                skip_dates=skip_dates
+                                                        )
+                    windows.append(window_object)
                     # starting point of the next window
                     starting_point = extended_end
                     window_number += 1
@@ -249,26 +276,28 @@ def extract_window(normalise_df, frequency_denominator, target_value):
                 # if no UNKNOWN entries, failure
                     unknown_mask = window_df["Value"] == "UNKNOWN"
                     if unknown_mask.any():
-                        windows.append({
-                            "window_number": window_number,
-                            "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                            "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                            "result": "unresolved",
-                            "extension": True,
-                            "extension_length": skip_count
-                        })
+                        window_object = create_window_object(
+                                                    window_number,
+                                                    window_df,
+                                                    result="unresolved",
+                                                    extension=True,
+                                                    extension_length=skip_count,
+                                                    skip_dates=skip_dates
+                                                    )#hereiam
+                        windows.append(window_object)
                         # starting point of the next window
                         starting_point = extended_end
                         window_number += 1
                     else:
-                        windows.append({
-                            "window_number": window_number,
-                            "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                            "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
-                            "result": 0,
-                            "extension": True,
-                            "extension_length": skip_count
-                                        })
+                        window_object = create_window_object(
+                                                    window_number,
+                                                    window_df,
+                                                    result=0,
+                                                    extension=True,
+                                                    extension_length=skip_count,
+                                                    skip_dates=skip_dates
+                                                    )#hereiam
+                        windows.append(window_object)
                         # starting point of the next window
                         starting_point = extended_end
                         window_number += 1
@@ -280,20 +309,21 @@ def extract_window(normalise_df, frequency_denominator, target_value):
         # evaluate window
         running_sum = evaluate_window(window_df)
         if running_sum >= target_value:
-            windows.append({"window_number": window_number,
-                "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                            "result": 1,
-                              "extension": False,
-                              "partial_window": True})
+            window_object = create_window_object(
+                                        window_number,
+                                        window_df,
+                                        result=1,
+                                        partial_window=True
+                                        )
+            windows.append(window_object)
         else:
-            windows.append({
-                "window_number": window_number,
-                "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                "result": "unresolved",
-                "extension": False,
-                "partial_window": True
-                                      
-                })
+            window_object = create_window_object(
+                                        window_number,
+                                        window_df,
+                                        result="unresolved",
+                                        partial_window=True
+                                        )
+            windows.append(window_object)
 
 
 
