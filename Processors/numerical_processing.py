@@ -146,6 +146,7 @@ def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip
         window_df = normalise_df.iloc[starting_point:extended_end]
         current_skip_count = (window_df["Value"] == "SKIP").sum()
     return window_df, current_skip_count, extended_end
+
 # window object with default params 
 def create_window_object(
     window_number,
@@ -169,6 +170,20 @@ def create_window_object(
 
 
             }
+
+# determine window status based on target value and presence of unknowns
+def determine_window_status(target_value, window_df):
+    running_sum = evaluate_window(window_df)
+    if running_sum >= target_value:
+        return 1
+    unknown_mask = window_df["Value"] == "UNKNOWN"
+    if unknown_mask.any():
+        return "unresolved"
+    return 0
+    
+    
+
+
 
 
 
@@ -196,117 +211,77 @@ def making_windows(normalise_df, frequency_denominator, target_value):
     # slice the window
         window_df = normalise_df.iloc[starting_point:provisional_end]
     # evaluate window
-        running_sum = evaluate_window(window_df)
-        # check window status
-        if running_sum >= target_value:
-
+    # if skip = 0 
+        skip_count = (window_df["Value"] == "SKIP").sum()
+        if skip_count == 0:
+            result = determine_window_status(target_value, window_df)
             window_object = create_window_object(
                                     window_number,
                                     window_df,
-                                     result=1
+                                     result=result
                                             )
             windows.append(window_object)
             
             # starting point of the next window
             starting_point = provisional_end
             window_number += 1
-    # window extension logic
-        
+
         else:
-            #check skip count
-            skip_count = (window_df["Value"] == "SKIP").sum()
-            
 
-       
-        # if there are no skip entris no extension 
-        
-            if skip_count == 0:
-                unknown_mask = window_df["Value"] == "UNKNOWN"
-                if unknown_mask.any():
-                    window_object = create_window_object(
-                                            window_number,
-                                            window_df,
-                                            result="unresolved"
-                                                         )
-                    windows.append(window_object)
 
-                    # starting point of the next window
-                    starting_point = provisional_end
-                    window_number += 1
-                else:
-                    window_object = create_window_object(
-                                                window_number,
-                                                window_df,
-                                                result=0
-                                                        )
-                    windows.append(window_object)
-                    # starting point of the next window
-                    starting_point = provisional_end  
-                    window_number += 1  
- # extend the window by the number of SKIP entries
+# check if rescue is required
+            running_sum = evaluate_window(window_df)
+            # check window status
+            if running_sum >= target_value:
+                # no rescue is needed
+
+                window_object = create_window_object(
+                                        window_number,
+                                        window_df,
+                                        result=1
+                                                )
+                windows.append(window_object)
+                
+                # starting point of the next window
+                starting_point = provisional_end
+                window_number += 1
+        # window extension logic
+            #attempt rescue
             else:
                 result = skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count)
                 if result is None:
                     break
                 else:
-
                     window_df, current_skip_count, extended_end = result
-
-                skip_count = current_skip_count    
-                #evaluate window
-                running_sum = evaluate_window(window_df)
+                skip_count = current_skip_count
+            
+            
+                
+                
                 skip_mask = window_df["Value"] == "SKIP"
                 skip_dates = window_df.loc[skip_mask, "Date"] 
                 # here .loc is returning a series
                 skip_dates = skip_dates.dt.strftime("%d/%m/%Y").tolist()
 
-                # check window status
-                if running_sum >= target_value:
-                    window_object = create_window_object(
-                                                window_number,
-                                                window_df,
-                                                result=1,
-                                                extension=True,
-                                                extension_length=skip_count,
-                                                skip_dates=skip_dates
-                                                        )
-                    windows.append(window_object)
-                    # starting point of the next window
-                    starting_point = extended_end
-                    window_number += 1
-                else:
-                # if still not successful, check for UNKNOWN entries in the extended window
-                # and if any UNKNOWN entries are present, discard window 
-                # if no UNKNOWN entries, failure
-                    unknown_mask = window_df["Value"] == "UNKNOWN"
-                    if unknown_mask.any():
-                        window_object = create_window_object(
-                                                    window_number,
-                                                    window_df,
-                                                    result="unresolved",
-                                                    extension=True,
-                                                    extension_length=skip_count,
-                                                    skip_dates=skip_dates
-                                                    )#hereiam
-                        windows.append(window_object)
-                        # starting point of the next window
-                        starting_point = extended_end
-                        window_number += 1
-                    else:
-                        window_object = create_window_object(
-                                                    window_number,
-                                                    window_df,
-                                                    result=0,
-                                                    extension=True,
-                                                    extension_length=skip_count,
-                                                    skip_dates=skip_dates
-                                                    )#hereiam
-                        windows.append(window_object)
-                        # starting point of the next window
-                        starting_point = extended_end
-                        window_number += 1
-                    if starting_point >= len(normalise_df):
-                        break
+                # determine window status
+                result = determine_window_status(target_value, window_df)
+
+                
+                window_object = create_window_object(
+                                            window_number,
+                                            window_df,
+                                            result=result,
+                                            extension=True,
+                                            extension_length=skip_count,
+                                            skip_dates=skip_dates
+                                                    )
+                windows.append(window_object)
+                # starting point of the next window
+                starting_point = extended_end
+                window_number += 1
+                
+                if starting_point >= len(normalise_df):
+                    break
                     # handle last partial window if it exists
     if starting_point < len(normalise_df):
         window_df = normalise_df.iloc[starting_point:len(normalise_df)]
