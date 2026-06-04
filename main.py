@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.params import Form
 from Processors.utils import load_data
 from Processors.binary_processing import clean_binary_data, calculate_binary_metrics, build_behavior_context
-from Processors.numerical_processing import clean_numerical_data, calculate_numerical_metrics
+from Processors.numerical_processing import clean_numerical_data, calculate_numerical_metrics, reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response
 import os
 
 app = FastAPI()
@@ -41,7 +41,8 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
         meta_row = meta_df[meta_df["Name"] == habit_name]
         if meta_row.empty:
             return {"error": "Habit not found in Meta.csv"}
-        row = meta_row.iloc[0]  
+        row = meta_row.iloc[0]
+        habit_type = row["Type"]  
         if row["Type"] == "YES_NO":
             df, skipped_days_count, unknown_days_count = clean_binary_data(df)
             metrics = calculate_binary_metrics(df, skipped_days_count, unknown_days_count)
@@ -58,12 +59,25 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
             frequency_denominator = int(row['FrequencyDenominator'])
             df, skipped_days_count, unknown_days_count = clean_numerical_data(df)
             result = calculate_numerical_metrics(df, target_value, frequency_denominator, skipped_days_count, unknown_days_count)
+            #new pipeline
+            timeline_df = reconstruct_timeline(raw_df)
+            normalise_df = normalise_numerical_states(timeline_df)
+            windows = extract_windows(normalise_df, frequency_denominator, target_value)
+            #
+            print(len(windows))
+
+            for window in windows:
+                print(window)
+                #
+            behavior_context = build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name, habit_type)
+
+
         else:
             return {"error": "Unsupported habit type"}
     else:
         df, skipped_days_count, unknown_days_count = clean_binary_data(df)
         result = calculate_binary_metrics(df, skipped_days_count, unknown_days_count)    
-    return result
+    return behavior_context
 
 
 

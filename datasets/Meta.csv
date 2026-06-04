@@ -23,3 +23,4 @@ Position,Name,Type,Question,Description,FrequencyNumerator,FrequencyDenominator,
 022,Sentences,YES_NO,Did you write?,,1,1,#FF8F00,,,,true
 023,Athletes,NUMERICAL,What?,,1,7,#1976D2,,AT_LEAST,10.0,false
 024,Nukes,NUMERICAL,,,1,7,#1976D2,miss,AT_MOST,10.0,false
+025,Daily Reading,NUMERICAL,Did you read?,,1,7,#1976D2,,AT_LEAST,5.0,false

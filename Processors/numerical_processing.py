@@ -1,4 +1,6 @@
 import pandas as pd
+from Processors.utils import parse_dates
+
 
 
 
@@ -82,7 +84,7 @@ def calculate_numerical_metrics(df, target_value, frequency_denominator, skipped
 
 
 def reconstruct_timeline(raw_df):
-    raw_df["Date"] = pd.to_datetime(raw_df["Date"])
+    raw_df["Date"] = parse_dates(raw_df["Date"])
     raw_df = raw_df.sort_values(by="Date")
     start_date =  raw_df["Date"].min()
     end_date = raw_df["Date"].max()
@@ -106,6 +108,7 @@ def reconstruct_timeline(raw_df):
 
 def normalise_numerical_states(timeline_df):
     normalise_df = timeline_df.copy()
+    normalise_df["Value"] = normalise_df["Value"].astype(object)#
     normalise_df["Value"] = normalise_df["Value"].replace("NO", 0)
     numeric_mask = ~normalise_df["Value"].isin(["SKIP", "UNKNOWN"])
     #row selection
@@ -114,13 +117,14 @@ def normalise_numerical_states(timeline_df):
     # returns series
     numeric_values = numeric_values / 1000
     # how to assign these numeric values back to the original dataframe
-    
+    # print(normalise_df["Value"].dtype)#
     normalise_df.loc[numeric_mask, "Value"] = numeric_values
     
     return normalise_df
 
 
 # window extraction and evaluation logic
+#helper func
 def evaluate_window(window_df):
     numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
     numeric_values = window_df.loc[numeric_mask, "Value"]
@@ -128,6 +132,7 @@ def evaluate_window(window_df):
     return running_sum
 
 #skip triggered extension logic 
+#helper func
 def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count):
     handled_skip_count = skip_count
     extended_end = provisional_end + handled_skip_count
@@ -148,6 +153,7 @@ def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip
     return window_df, current_skip_count, extended_end
 
 # window object with default params 
+#helper func
 def create_window_object(
     window_number,
     window_df,
@@ -172,6 +178,7 @@ def create_window_object(
             }
 
 # determine window status based on target value and presence of unknowns
+#helper func
 def determine_window_status(target_value, window_df):
     running_sum = evaluate_window(window_df)
     if running_sum >= target_value:
@@ -180,17 +187,10 @@ def determine_window_status(target_value, window_df):
     if unknown_mask.any():
         return "unresolved"
     return 0
-    
-    
 
 
 
-
-
-
-
-
-def making_windows(normalise_df, frequency_denominator, target_value):
+def extract_windows(normalise_df, frequency_denominator, target_value):
     # engagement entries mask 
     engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
     if not engagement_mask.any():
