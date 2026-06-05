@@ -172,6 +172,7 @@ def create_window_object(
                 "extension": extension,
                 "extension_length": extension_length,
                 "skip_dates": skip_dates,
+                "window_length": len(window_df),
                 "partial_window": partial_window
 
 
@@ -369,10 +370,12 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
         "value": latest_engagement_value
                                    },
         #window level info
-
+        "total_windows": len(windows),
         "latest_complete_window_status": latest_complete_window_status,
         "unresolved_window_count": unresolved_window_count,
         "partial_window": partial_window,
+        "extended_windows_count": sum(1 for window in windows if window["extension"]),
+        "normal_windows_count": sum(1 for window in windows if not window["extension"]),
         "success_window_count": success_window_count,
         "failure_window_count": failure_window_count
 
