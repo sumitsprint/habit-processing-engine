@@ -11,7 +11,7 @@ def parse_dates(date_series):
     
     
     date_series = date_series.dropna().astype(str).str.replace("-", "/")
-    sample_date = str(date_series.iloc[0])
+    sample_date = date_series.iloc[0]
     parts = sample_date.split("/")
 
     if len(parts[0]) == 4:  # Year is first

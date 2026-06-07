@@ -5,7 +5,3 @@ temp/
 data/
 __pycache__/
 venv/
-Processors/__pycache__/__init__.cpython-313.pyc
-Processors/__pycache__/numerical_processing.cpython-313.pyc
-Processors/__pycache__/utils.cpython-313.pyc
-Processors/__pycache__/binary_processing.cpython-313.pyc
