@@ -128,6 +128,7 @@ def normalise_numerical_states(timeline_df):
 
 # window extraction and evaluation logic
 #helper func
+
 def evaluate_window(window_df):
     numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
     numeric_values = window_df.loc[numeric_mask, "Value"]
@@ -136,6 +137,7 @@ def evaluate_window(window_df):
 
 #skip triggered extension logic 
 #helper func
+
 def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count):
     handled_skip_count = skip_count
     extended_end = provisional_end + handled_skip_count
@@ -157,6 +159,7 @@ def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip
 
 # window object with default params 
 #helper func
+
 def create_window_object(
     window_number,
     window_df,
@@ -183,6 +186,7 @@ def create_window_object(
 
 # determine window status based on target value and presence of unknowns
 #helper func
+
 def determine_window_status(target_value, window_df):
     running_sum = evaluate_window(window_df)
     if running_sum >= target_value:
@@ -228,10 +232,13 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
 
         window_df = normalise_df.iloc[starting_point:provisional_end]
 
-    # evaluate window
-    # if skip = 0 
+   
+# determine the type of window based on the presence of skips
 
         skip_count = (window_df["Value"] == "SKIP").sum()
+
+        # one kind of window
+
         if skip_count == 0:
             result = determine_window_status(target_value, window_df)
             window_object = create_window_object(
@@ -245,6 +252,8 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
 
             starting_point = provisional_end
             window_number += 1
+
+ #another kind of window with skips
 
         else:
 
@@ -281,6 +290,8 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
                 else:
                     window_df, current_skip_count, extended_end = result
 
+                # meta data for the extended window
+
                 skip_count = current_skip_count
                 skip_mask = window_df["Value"] == "SKIP"
                 skip_dates = window_df.loc[skip_mask, "Date"] 
@@ -309,10 +320,9 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
                 starting_point = extended_end
                 window_number += 1
                 
-                if starting_point >= len(normalise_df):
-                    break
+                # here the line was removed startpoint >= len(normalise_df) 
 
-                    # handle last partial window if it exists
+    # handle last partial window if it exists
 
     if starting_point < len(normalise_df):
         window_df = normalise_df.iloc[starting_point:len(normalise_df)]
