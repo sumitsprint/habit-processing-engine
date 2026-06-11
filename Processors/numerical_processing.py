@@ -139,24 +139,22 @@ def evaluate_window(window_df):
 #helper func
 
 def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count):
-    handled_skip_count = skip_count
-    extended_end = provisional_end + handled_skip_count
-    if extended_end > len(normalise_df):
-        return None
-    # slice the extended window and compute sum
-    window_df = normalise_df.iloc[starting_point:extended_end]
-        #recompute skip count in the extended window
-    current_skip_count = (window_df["Value"] == "SKIP").sum()
-    while current_skip_count > handled_skip_count:
-        additional_skips = current_skip_count - handled_skip_count
-        extended_end += additional_skips
-        handled_skip_count = current_skip_count
+    
+    current_skip_count = skip_count
+    extension_size = skip_count
+    while extension_size > 0:
+        extended_end = provisional_end + extension_size
         if extended_end > len(normalise_df):
-            break
+            return None
         window_df = normalise_df.iloc[starting_point:extended_end]
-        current_skip_count = (window_df["Value"] == "SKIP").sum()
-    return window_df, current_skip_count, extended_end
+        extended_part = normalise_df.iloc[provisional_end:extended_end]
+        extension_size = (extended_part["Value"] == "SKIP").sum()
+        current_skip_count += extension_size
+        provisional_end = extended_end
+    return window_df, current_skip_count, extended_end        
 
+
+    
 # window object with default params 
 #helper func
 
@@ -176,7 +174,7 @@ def create_window_object(
                 "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
                 "result": result,
                 "extension": extension,
-                "extension_length": extension_length,
+                "extension_length": int(extension_length) if extension_length is not None else None,
                 "skip_dates": skip_dates,
                 "window_length": len(window_df),
                 "partial_window": partial_window
