@@ -254,12 +254,10 @@ def reconstruct_timeline(raw_df, frequency_denominator):
     for i in range(anchor_index, len(timeline_df)):
 
         if (i - anchor_index) % frequency_denominator == 0:
-            if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP"]:
+            if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP", "UNKNOWN"]:
                 continue
             
-            if pd.isna(timeline_df.loc[i, "Value"]):
-                timeline_df.loc[i, "Value"] = "UNKNOWN"
-
+            
         else:
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP"]:
                 #anchor shift detcted
@@ -269,9 +267,6 @@ def reconstruct_timeline(raw_df, frequency_denominator):
     return timeline_df               
 
 
-if __name__ == "__main__":
-    
-    print(reconstruct_timeline(pd.DataFrame(raw_df), 3))
 
 
 
