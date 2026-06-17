@@ -4,6 +4,8 @@
 #  | ----behavior pipeline
 
 import pandas as pd
+from Processors.utils import parse_dates
+
 def clean_binary_data(df):
             
     # takes the date column converts it into datetime object
@@ -218,6 +220,100 @@ def build_behavior_context(raw_df, habit_name):
 
     # Return the final structured behavior context.
     return behavior_context
+
+
+
+"""start here"""
+
+def reconstruct_timeline(raw_df, frequency_denominator):
+    raw_df = raw_df.copy()
+    raw_df["Date"] = parse_dates(raw_df["Date"])
+    start_date = raw_df["Date"].min()
+    end_date = raw_df["Date"].max()
+    full_date_range = pd.date_range(start=start_date, end=end_date, freq="D")
+
+    timeline_df = pd.DataFrame({"Date": full_date_range})
+    timeline_df = timeline_df.merge(raw_df, on="Date", how="left")
+    timeline_df["Value"] = timeline_df["Value"].fillna("UNKNOWN")
+    timeline_df = timeline_df[["Date", "Value"]]
+
+    engagement_mask = timeline_df["Value"].isin(["YES_MANUAL", "NO", "SKIP"])
+    
+    #think if it does not return anything
+
+    if not engagement_mask.any():
+        return timeline_df
+    
+    first_engagement_index = timeline_df[engagement_mask].index[0]
+    anchor_index = first_engagement_index
+
+    
+
+    
+
+    for i in range(anchor_index, len(timeline_df)):
+
+        if (i - anchor_index) % frequency_denominator == 0:
+            if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP"]:
+                continue
+            
+            if pd.isna(timeline_df.loc[i, "Value"]):
+                timeline_df.loc[i, "Value"] = "UNKNOWN"
+
+        else:
+            if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP"]:
+                #anchor shift detcted
+                anchor_index = i
+            else:
+                timeline_df.loc[i, "Value"] = "YES_AUTO" 
+    return timeline_df               
+
+
+if __name__ == "__main__":
+    
+    print(reconstruct_timeline(pd.DataFrame(raw_df), 3))
+
+
+
+
+
+
+
+    
+                
+
+
+            
+
+
+
+
+
+
+
+        
+
+
+        
+
+        
+        
+        
+
+        
+        
+
+
+    
+
+
+
+
+
+
+
+
+
 
 
 

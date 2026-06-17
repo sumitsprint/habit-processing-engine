@@ -114,50 +114,69 @@ def normalise_numerical_states(timeline_df):
     normalise_df["Value"] = normalise_df["Value"].astype(object)#allow the column to hold mixed types
     normalise_df["Value"] = normalise_df["Value"].replace("NO", 0)
     numeric_mask = ~normalise_df["Value"].isin(["SKIP", "UNKNOWN"])
+    
     #row selection
     numeric_strings = normalise_df.loc[numeric_mask, "Value"]
     numeric_values = pd.to_numeric(numeric_strings)
+
     # returns series
     numeric_values = numeric_values / 1000
+
     # how to assign these numeric values back to the original dataframe
     # print(normalise_df["Value"].dtype)#
     normalise_df.loc[numeric_mask, "Value"] = numeric_values
-    
     return normalise_df
 
 
 # window extraction and evaluation logic
 #helper func
-
 def evaluate_window(window_df):
     numeric_mask = ~window_df["Value"].isin(["SKIP", "UNKNOWN"])
     numeric_values = window_df.loc[numeric_mask, "Value"]
     running_sum = numeric_values.sum()
     return running_sum
 
+
 #skip triggered extension logic 
 #helper func
-
 def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count):
-    
+
+    #skip count in the provisional window
     current_skip_count = skip_count
     extension_size = skip_count
     while extension_size > 0:
         extended_end = provisional_end + extension_size
         if extended_end > len(normalise_df):
             return None
+        
+        # extend the window by skip_count
         window_df = normalise_df.iloc[starting_point:extended_end]
+
+        # examine only the newly added part of the window for skips
         extended_part = normalise_df.iloc[provisional_end:extended_end]
         extension_size = (extended_part["Value"] == "SKIP").sum()
         current_skip_count += extension_size
+
+        # preparing state for next extension if needed
         provisional_end = extended_end
     return window_df, current_skip_count, extended_end        
 
 
+# determine window status based on target value and presence of unknowns
+#helper func
+def determine_window_status(target_value, window_df):
+    running_sum = evaluate_window(window_df)
+    if running_sum >= target_value:
+        return 1
+    unknown_mask = window_df["Value"] == "UNKNOWN"
+    if unknown_mask.any():
+        return "unresolved"
+    return 0
+    
+
     
 # window object with default params 
 #helper func
-
 def create_window_object(
     window_number,
     window_df,
@@ -171,7 +190,7 @@ def create_window_object(
     return{
                 "window_number": window_number,
                 "start_date": window_df.iloc[0]["Date"].strftime("%d/%m/%Y"),
-                "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"),
+                "end_date": window_df.iloc[-1]["Date"].strftime("%d/%m/%Y"), 
                 "result": result,
                 "extension": extension,
                 "extension_length": int(extension_length) if extension_length is not None else None,
@@ -182,42 +201,24 @@ def create_window_object(
 
             }
 
-# determine window status based on target value and presence of unknowns
-#helper func
-
-def determine_window_status(target_value, window_df):
-    running_sum = evaluate_window(window_df)
-    if running_sum >= target_value:
-        return 1
-    unknown_mask = window_df["Value"] == "UNKNOWN"
-    if unknown_mask.any():
-        return "unresolved"
-    return 0
-
-
 
 def extract_windows(normalise_df, frequency_denominator, target_value):
 
     # engagement entries mask 
-
     engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
     
     # if all are unknowns then there are no engagements and we can return an empty list of windows or a specific message indicating no engagements
-
     if not engagement_mask.any():
         return []
     
     #first engagement index
     # .index returns indices values 
-
     first_engagement_index = normalise_df[engagement_mask].index[0]
 
     #starting_point and end of the provisional window
-
     starting_point = first_engagement_index
 
     # windows of success and failure and unresolved
-
     windows = []
     window_number = 1
     
@@ -226,17 +227,14 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
         if provisional_end > len(normalise_df):
             break 
 
-    # slice the window
-
+        # slice the window
         window_df = normalise_df.iloc[starting_point:provisional_end]
 
    
-# determine the type of window based on the presence of skips
-
+        # determine the type of window based on the presence of skips
         skip_count = (window_df["Value"] == "SKIP").sum()
 
-        # one kind of window
-
+        # one kind of window with no skips
         if skip_count == 0:
             result = determine_window_status(target_value, window_df)
             window_object = create_window_object(
@@ -247,25 +245,20 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
             windows.append(window_object)
             
             # starting point of the next window
-
             starting_point = provisional_end
             window_number += 1
 
- #another kind of window with skips
-
+        #another kind of window with skips
         else:
 
 
-# check if rescue is required
-
+            # check if rescue is required
             running_sum = evaluate_window(window_df)
 
-            # check window status
-
+            # check whether extension is needed
             if running_sum >= target_value:
 
                 # no rescue is needed
-
                 window_object = create_window_object(
                                         window_number,
                                         window_df,
@@ -274,13 +267,11 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
                 windows.append(window_object)
                 
                 # starting point of the next window
-
                 starting_point = provisional_end
                 window_number += 1
 
         # window extension logic
-            #attempt rescue
-
+        #attempt rescue through extension
             else:
                 result = skip_triggered_extension(normalise_df, starting_point, provisional_end, skip_count)
                 if result is None:
@@ -289,17 +280,14 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
                     window_df, current_skip_count, extended_end = result
 
                 # meta data for the extended window
-
                 skip_count = current_skip_count
                 skip_mask = window_df["Value"] == "SKIP"
                 skip_dates = window_df.loc[skip_mask, "Date"] 
 
                 # here .loc is returning a series
-
                 skip_dates = skip_dates.dt.strftime("%d/%m/%Y").tolist()
 
                 # determine window status
-
                 result = determine_window_status(target_value, window_df)
 
                 
@@ -314,19 +302,16 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
                 windows.append(window_object)
 
                 # starting point of the next window
-
                 starting_point = extended_end
                 window_number += 1
                 
                 # here the line was removed startpoint >= len(normalise_df) 
 
-    # handle last partial window if it exists
-
+     # handle last partial window if it exists
     if starting_point < len(normalise_df):
         window_df = normalise_df.iloc[starting_point:len(normalise_df)]
 
         # evaluate window
-
         running_sum = evaluate_window(window_df)
         if running_sum >= target_value:
             window_object = create_window_object(
@@ -352,7 +337,6 @@ def extract_windows(normalise_df, frequency_denominator, target_value):
 def build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name, habit_type):
 
     # first active entry
-
     active_entry_mask = ~normalise_df["Value"].isin(["SKIP", "UNKNOWN"])
     if not active_entry_mask.any():
         
@@ -364,14 +348,12 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
         first_active_value = active_entries_df.iloc[0]["Value"]
 
     #latest engagement entry
-
     engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
     engagement_entries_df = normalise_df.loc[engagement_mask, ["Date", "Value"]]
     latest_engagement_date = engagement_entries_df.iloc[-1]["Date"].strftime("%d-%m-%Y")
     latest_engagement_value = engagement_entries_df.iloc[-1]["Value"]
 
     #latest complete window status
-
     if windows[-1].get("partial_window", False):
         if len(windows) == 1:
             latest_complete_window_status = None
@@ -384,8 +366,7 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
     success_window_count = 0
     failure_window_count = 0  
 
-        #unresolved window count, success window count, failure window count
-
+    #unresolved window count, success window count, failure window count
     for window in windows:
         if window["result"] == "unresolved":
             unresolved_window_count += 1
@@ -403,8 +384,8 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
         "frequency_denominator": frequency_denominator,
         "target_value": target_value,
 
-        #timeline level info
 
+        #timeline level info
         "first_active_entry": {
         "date": first_active_date,
         "value": first_active_value
@@ -413,8 +394,8 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
         "date": latest_engagement_date,
         "value": latest_engagement_value
                                    },
-        #window level info
 
+        #window level info
         "total_windows": len(windows),
         "latest_complete_window_status": latest_complete_window_status,
         "unresolved_window_count": unresolved_window_count,

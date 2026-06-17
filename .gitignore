@@ -5,3 +5,9 @@ temp/
 data/
 __pycache__/
 venv/
+highlevel.txt
+metrics.txt
+modulo.txt
+myown.txt
+rdm.txt
+test_binary.py
