@@ -84,7 +84,7 @@ def calculate_binary_metrics(df, skipped_days_count, unknown_days_count):
 
 """start here"""
 
-def reconstruct_timeline(raw_df, frequency_denominator):
+def reconstruct_timeline_binary(raw_df, frequency_denominator):
     raw_df = raw_df.copy()
     raw_df["Date"] = parse_dates(raw_df["Date"])
     start_date = raw_df["Date"].min()

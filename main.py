@@ -3,7 +3,7 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.params import Form
 from Processors.utils import load_data
-from Processors.binary_processing import clean_binary_data, calculate_binary_metrics, build_behavior_context
+from Processors.binary_processing import reconstruct_timeline_binary, create_state_views, build_behavior_context
 from Processors.numerical_processing import clean_numerical_data, calculate_numerical_metrics, reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response
 import os
 
@@ -44,13 +44,15 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
         row = meta_row.iloc[0]
         habit_type = row["Type"]  
         if row["Type"] == "YES_NO":
-            df, skipped_days_count, unknown_days_count = clean_binary_data(df)
-            metrics = calculate_binary_metrics(df, skipped_days_count, unknown_days_count)
-            behavior_context = build_behavior_context(raw_df, habit_name)
-            result = {
-                "metrics": metrics,
-                "behavior_context": behavior_context
-            }
+            frequency_denominator = int(row['FrequencyDenominator'])
+            
+            timeline_df, first_engagement_index = reconstruct_timeline_binary(raw_df, frequency_denominator)
+            _, engagement_df, active_df = create_state_views(timeline_df, first_engagement_index)
+            behavior_context = build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df )
+            #unpacking is position based not name based
+                
+                
+            
 
         elif row["Type"] == "NUMERICAL":
             if row["Target Type"] != "AT_LEAST":
@@ -74,9 +76,8 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
 
         else:
             return {"error": "Unsupported habit type"}
-    else:
-        df, skipped_days_count, unknown_days_count = clean_binary_data(df)
-        result = calculate_binary_metrics(df, skipped_days_count, unknown_days_count)    
+    
+           
     return behavior_context
 
 

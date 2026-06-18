@@ -24,3 +24,5 @@ Position,Name,Type,Question,Description,FrequencyNumerator,FrequencyDenominator,
 023,Athletes,NUMERICAL,What?,,1,7,#1976D2,,AT_LEAST,10.0,false
 024,Nukes,NUMERICAL,,,1,7,#1976D2,miss,AT_MOST,10.0,false
 025,Daily Reading,NUMERICAL,Did you read?,,1,7,#1976D2,,AT_LEAST,7.0,false
+026,(sunday- evening) horse stance,YES_NO,Did you complete Sat?,Morning workout,1,7,#388E3C,,,,false
+
