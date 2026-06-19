@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.params import Form
 from Processors.utils import load_data
 from Processors.binary_processing import reconstruct_timeline_binary, create_state_views, build_behavior_context
-from Processors.numerical_processing import clean_numerical_data, calculate_numerical_metrics, reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response
+from Processors.numerical_processing import reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response
 import os
 
 app = FastAPI()
@@ -47,8 +47,10 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
             frequency_denominator = int(row['FrequencyDenominator'])
             
             timeline_df, first_engagement_index = reconstruct_timeline_binary(raw_df, frequency_denominator)
-            _, engagement_df, active_df = create_state_views(timeline_df, first_engagement_index)
+            scheduled_df, engagement_df, active_df = create_state_views(timeline_df, first_engagement_index)
             behavior_context = build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df )
+            print(scheduled_df["Value"])
+            # print(engagement_df["Value"])
             #unpacking is position based not name based
                 
                 
@@ -59,9 +61,7 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
                 return {"error": "only AT_LEAST target type is supported for NUMERICAL habits"}
             target_value = float(row["Target Value"])
             frequency_denominator = int(row['FrequencyDenominator'])
-            df, skipped_days_count, unknown_days_count = clean_numerical_data(df)
-            result = calculate_numerical_metrics(df, target_value, frequency_denominator, skipped_days_count, unknown_days_count)
-            #new pipeline
+            
             timeline_df = reconstruct_timeline(raw_df)
             normalise_df = normalise_numerical_states(timeline_df)
             windows = extract_windows(normalise_df, frequency_denominator, target_value)

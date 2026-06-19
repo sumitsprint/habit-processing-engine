@@ -86,6 +86,11 @@ def calculate_binary_metrics(df, skipped_days_count, unknown_days_count):
 
 def reconstruct_timeline_binary(raw_df, frequency_denominator):
     raw_df = raw_df.copy()
+
+    #after filtering pandas sometimes returns a view and sometimes a new df 
+    # the behavior is not always obvious
+    raw_df = raw_df[raw_df["Value"] != "YES_AUTO"].copy() 
+
     raw_df["Date"] = parse_dates(raw_df["Date"])
     start_date = raw_df["Date"].min()
     end_date = raw_df["Date"].max()
@@ -112,6 +117,7 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
 
     for i in range(anchor_index, len(timeline_df)):
 
+        #if the day is scheduled
         if (i - anchor_index) % frequency_denominator == 0:
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP", "UNKNOWN"]:
                 continue
@@ -119,6 +125,7 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
             
         else:
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP"]:
+                
                 #anchor shift detcted
                 anchor_index = i
             else:
