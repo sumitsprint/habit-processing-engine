@@ -3,84 +3,6 @@ from Processors.utils import parse_dates
 
 
 
-""" ignore these two functions(clean_numerical_data and calculate_numerical_metrics) completely, they are artifacts"""
-
-def clean_numerical_data(df):
-    skip_mask = df["Value"] == "SKIP"
-    unknown_mask = df["Value"] == "UNKNOWN"
-    skipped_days_count = skip_mask.sum()
-    unknown_days_count = unknown_mask.sum()
-    df = df[~df["Value"].isin(["SKIP", "UNKNOWN"])]
-    df["Date"] = pd.to_datetime(df["Date"], format="mixed", dayfirst=True)
-    df["Value"] = pd.to_numeric(df["Value"], errors="coerce").fillna(0)  
-    df["Value"] = df["Value"] / 1000
-    df = df.sort_values(by="Date")
-    df = df[["Date", "Value"]]
-    return df, skipped_days_count, unknown_days_count
-
-
-def calculate_numerical_metrics(df, target_value, frequency_denominator, skipped_days_count, unknown_days_count):
-    values = df['Value'].tolist()
-    freq = frequency_denominator
-
-    windows = []
-    current_window = []
-    for val in values:
-        current_window.append(val)
-        if len(current_window) == freq:
-            windows.append(current_window)
-            current_window = []
-    window_results = []
-    for window in windows:
-        window_sum = sum(window)
-
-        if window_sum >= target_value:
-            window_results.append(1)
-        else:
-            window_results.append(0)
-
-    total_success = sum(window_results)
-    total_windows = len(window_results) 
-    consistency = (total_success/total_windows) * 100 if total_windows > 0 else 0
-
-    max_streak = 0
-    temp_streak = 0
-    for n in window_results:
-        if n == 1:
-            temp_streak += 1
-            max_streak = max(max_streak, temp_streak)
-        else:
-            temp_streak = 0
-
-    current_streak = 0
-    for n in reversed(window_results):
-        if n == 1:
-            current_streak += 1
-        else:
-            break
-    failures = []
-    for i, n in enumerate(window_results):
-        if n == 0:
-            failures.append(i + 1) 
-     #failures in windows                          
-
-    return {
-                "total_success" : int(total_success),
-                "Total_Windows" : int(total_windows),
-                "Consistency" : round(consistency, 2),
-                "Longest_Streak" : int(max_streak),
-                "Current_Streak" : int(current_streak),
-                "Failure_Windows" : failures,
-                "Skipped_days_count": int(skipped_days_count),
-                "unknown_days_count": int(unknown_days_count)
-                
-
-                }
-
-
-"""
-start here
-"""
 # reconstructing the entire timeline for fixed window logic
 # sparse data to timeline reconstruction
 
@@ -409,7 +331,45 @@ def build_api_response(windows, normalise_df, frequency_denominator, target_valu
     }
     
 
-    return behavior_context
+    return behavior_context, success_window_count, unresolved_window_count
+
+def calculate_numerical_metrics(windows, success_window_count, unresolved_window_count):
+    
+    #unresolved and skip does not affect metrics
+    total_windows = len(windows) - unresolved_window_count
+    consistency = (success_window_count/total_windows) * 100 if total_windows > 0 else 0
+    
+    #longest streak
+
+    temp_streak = 0
+    max_streak = 0
+    for window in windows:
+        if window["result"] == 1:
+            temp_streak += 1
+            max_streak = max(max_streak, temp_streak)
+
+        elif window["result"] == 0:
+            temp_streak = 0
+
+    current_streak = 0
+    for window in reversed(windows):
+        if window["result"] == 1:
+            current_streak += 1
+        else:
+            break
+
+    return {
+        "Consistency" : round(consistency, 2),
+        "Longest_Streak" : int(max_streak),
+        "Current_Streak" : int(current_streak),
+
+
+    }        
+
+
+
+
+
 
 
 

@@ -6,83 +6,7 @@
 import pandas as pd
 from Processors.utils import parse_dates
 
-def clean_binary_data(df):
-            
-    # takes the date column converts it into datetime object
-    skip_mask = df["Value"] == "SKIP"   # it gives a series of boolean values where the condition is true
-    
-# track the count of skipped and unknown days
-    unknown_mask = df["Value"] == "UNKNOWN"
-    # yes_auto_mask = df["Value"] == "YES_AUTO"
-    # yes_auto_count = yes_auto_mask.sum()
-    skipped_days_count = skip_mask.sum()
-    unknown_days_count = unknown_mask.sum()
 
-    df["Date"] = pd.to_datetime(df["Date"])  # Convert to datetime, coerce errors to NaT
-    
-    df = df[df["Value"].isin(["YES_MANUAL", "NO"])]  #  filter out the auto entries
-    
-    
-    df["habit"] = df["Value"].map({"YES_MANUAL": 1,
-                                   "NO": 0})
-    
-    df = df[["Date", "habit"]]
-    df = df.sort_values(by="Date")
-    
-    return df, skipped_days_count, unknown_days_count
-
-
-def calculate_binary_metrics(df, skipped_days_count, unknown_days_count):  
-    total_yes = df["habit"].sum()
-    total_days = len(df)
-    consistency = (total_yes / total_days) * 100 if total_days > 0 else 0
-
-    # Longest Streak
-    max_streak = 0
-    temp_streak = 0
-
-    for val in df["habit"]:
-        if val == 1:
-            temp_streak += 1
-            max_streak = max(max_streak, temp_streak)
-        else:
-            
-
-            temp_streak = 0 
-
-    # Current Streak
-    current_streak = 0
-    for val in reversed(df["habit"].tolist()):
-        if val == 1:
-            current_streak += 1
-        else:
-            break
-
-    # failures
-    failures =df[df["habit"] == 0]["Date"].dt.strftime("%d-%m-%Y").tolist() 
-    return {
-         "columns": df.columns.tolist(),
-         "Data_types": df.dtypes.astype(str).to_dict(),
-         "Total_yes": int(total_yes),
-         "Total_Days": int(total_days),
-         "Consistency": round(consistency, 2), # round to 2 decimal places for example 3.14159 will be rounded to 3.14 if no decimal places are specified it will round to the nearest integer
-         "Longest_Streak": int(max_streak),
-         "Current_Streak": int(current_streak),
-         "Failures": failures,
-         "first_5_times": df["Date"].head(5).dt.strftime("%H:%M:%S").tolist(),
-         "first_5_rows": df["Date"].head(5).dt.strftime("%Y-%m-%d").tolist(),
-         "day_names": df["Date"].head().dt.day_name().tolist(),
-         "skipped_days_count": int(skipped_days_count),
-         "unknown_days_count": int(unknown_days_count),
-         
-         
-    }
-
-
-
-
-
-"""start here"""
 
 def reconstruct_timeline_binary(raw_df, frequency_denominator):
     raw_df = raw_df.copy()
@@ -125,7 +49,7 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
             
         else:
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP"]:
-                
+
                 #anchor shift detcted
                 anchor_index = i
             else:
@@ -149,7 +73,42 @@ def create_state_views(timeline_df, first_engagement_index):
     active_df = engagement_df[engagement_df["Value"] != "SKIP"] # filter out skip
     return scheduled_df, engagement_df, active_df
 
+def calculate_binary_metrics(active_df):
+    total_days = len(active_df)
+    total_yes = (active_df["Value"] == "YES_MANUAL").sum()
+    consistency = (total_yes/total_days) * 100 if total_days > 0 else 0
 
+
+    temp_streak = 0
+    max_streak = 0
+    for value in active_df["Value"]:
+        if value == "YES_MANUAL":
+            temp_streak += 1
+            max_streak = max(temp_streak, max_streak)
+
+        else:
+            temp_streak = 0    
+
+    current_streak = 0
+    for value in reversed(active_df["Value"].tolist()):
+        if value == "YES_MANUAL":
+            current_streak += 1
+        else:
+            break
+
+    failures = 0
+    for value in active_df["Value"]:
+        if value == "NO":
+            failures += 1
+
+    return {
+        "total_decisive_days": int(total_days), #maybe wrong bcoz it excludes some scheduled days
+        "total_yes": int(total_yes),
+        "consistency": round(consistency, 2),
+        "Longest_streak": int(max_streak),
+        "current_streak": int(current_streak),
+        "total_failures": failures 
+    }        
 
 
 
@@ -304,6 +263,9 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
 
     # Return the final structured behavior context.
     return behavior_context
+
+
+
 
 
 

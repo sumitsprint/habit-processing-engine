@@ -3,8 +3,8 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.params import Form
 from Processors.utils import load_data
-from Processors.binary_processing import reconstruct_timeline_binary, create_state_views, build_behavior_context
-from Processors.numerical_processing import reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response
+from Processors.binary_processing import reconstruct_timeline_binary, create_state_views, build_behavior_context, calculate_binary_metrics
+from Processors.numerical_processing import reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response, calculate_numerical_metrics
 import os
 
 app = FastAPI()
@@ -47,10 +47,13 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
             frequency_denominator = int(row['FrequencyDenominator'])
             
             timeline_df, first_engagement_index = reconstruct_timeline_binary(raw_df, frequency_denominator)
-            scheduled_df, engagement_df, active_df = create_state_views(timeline_df, first_engagement_index)
+            _, engagement_df, active_df = create_state_views(timeline_df, first_engagement_index)
+            metrics = calculate_binary_metrics(active_df)
             behavior_context = build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df )
-            print(scheduled_df["Value"])
-            # print(engagement_df["Value"])
+            
+            
+            
+            
             #unpacking is position based not name based
                 
                 
@@ -71,15 +74,18 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
             for window in windows:
                 print(window)
                 #
-            behavior_context = build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name, habit_type)
+            behavior_context, success_window_count, unresolved_window_count = build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name, habit_type)
+            metrics = calculate_numerical_metrics(windows, success_window_count, unresolved_window_count)
 
 
         else:
             return {"error": "Unsupported habit type"}
     
            
-    return behavior_context
-
+    return {
+            "behavior_context": behavior_context, 
+            "metrics": metrics
+            }
 
 
 
