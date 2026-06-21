@@ -78,17 +78,34 @@ def calculate_binary_metrics(active_df):
     total_yes = (active_df["Value"] == "YES_MANUAL").sum()
     consistency = (total_yes/total_days) * 100 if total_days > 0 else 0
 
+# max_streak with dates
 
     temp_streak = 0
     max_streak = 0
-    for value in active_df["Value"]:
+    start_date_temp = None
+    
+
+    for i in range(len(active_df)):
+        value = active_df.iloc[i]["Value"]
+        date = active_df.iloc[i]["Date"]
         if value == "YES_MANUAL":
+            if temp_streak == 0:
+
+            #Store only the first date of the current streak    
+                start_date_temp = date
+
             temp_streak += 1
-            max_streak = max(temp_streak, max_streak)
+            if temp_streak > max_streak:
+                max_streak = temp_streak
+                start_date = start_date_temp
+                end_date = date
 
         else:
-            temp_streak = 0    
+            temp_streak = 0
 
+
+
+# current streak
     current_streak = 0
     for value in reversed(active_df["Value"].tolist()):
         if value == "YES_MANUAL":
@@ -96,6 +113,7 @@ def calculate_binary_metrics(active_df):
         else:
             break
 
+#failures
     failures = 0
     for value in active_df["Value"]:
         if value == "NO":
@@ -105,7 +123,9 @@ def calculate_binary_metrics(active_df):
         "total_decisive_days": int(total_days), #maybe wrong bcoz it excludes some scheduled days
         "total_yes": int(total_yes),
         "consistency": round(consistency, 2),
-        "Longest_streak": int(max_streak),
+        "Longest_streak": {"length": int(max_streak),
+                           "start_date": int(start_date),
+                           "end_date": int(end_date)},
         "current_streak": int(current_streak),
         "total_failures": failures 
     }        

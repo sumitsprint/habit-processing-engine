@@ -343,14 +343,22 @@ def calculate_numerical_metrics(windows, success_window_count, unresolved_window
 
     temp_streak = 0
     max_streak = 0
+    start_date_temp = None
     for window in windows:
         if window["result"] == 1:
+            if temp_streak == 0:
+                start_date_temp = window["start_date"]
             temp_streak += 1
-            max_streak = max(max_streak, temp_streak)
+            if temp_streak > max_streak:
+                max_streak = temp_streak
+                streak_start_date = start_date_temp
+                streak_end_date = window["end_date"]
+            
 
         elif window["result"] == 0:
             temp_streak = 0
 
+#current streak
     current_streak = 0
     for window in reversed(windows):
         if window["result"] == 1:
@@ -360,7 +368,10 @@ def calculate_numerical_metrics(windows, success_window_count, unresolved_window
 
     return {
         "Consistency" : round(consistency, 2),
-        "Longest_Streak" : int(max_streak),
+        "Longest_Streak" : {"length": int(max_streak),
+                            "start_date": int(streak_start_date),
+                            "end_date": int(streak_end_date)
+                            }, 
         "Current_Streak" : int(current_streak),
 
 
