@@ -369,8 +369,8 @@ def calculate_numerical_metrics(windows, success_window_count, unresolved_window
     return {
         "Consistency" : round(consistency, 2),
         "Longest_Streak" : {"length": int(max_streak),
-                            "start_date": int(streak_start_date),
-                            "end_date": int(streak_end_date)
+                            "start_date": streak_start_date,
+                            "end_date": streak_end_date
                             }, 
         "Current_Streak" : int(current_streak),
 

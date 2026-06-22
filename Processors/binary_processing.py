@@ -124,8 +124,9 @@ def calculate_binary_metrics(active_df):
         "total_yes": int(total_yes),
         "consistency": round(consistency, 2),
         "Longest_streak": {"length": int(max_streak),
-                           "start_date": int(start_date),
-                           "end_date": int(end_date)},
+                           "start_date": start_date.strftime("%d/%m/%Y"),
+                           "end_date": end_date.strftime("%d/%m/%Y")
+                           },
         "current_streak": int(current_streak),
         "total_failures": failures 
     }        
