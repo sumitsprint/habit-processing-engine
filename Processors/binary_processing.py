@@ -7,7 +7,7 @@ import pandas as pd
 from Processors.utils import parse_dates
 
 
-
+# construct the timeline
 def reconstruct_timeline_binary(raw_df, frequency_denominator):
     raw_df = raw_df.copy()
 
@@ -34,9 +34,6 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
     
     first_engagement_index = timeline_df[engagement_mask].index[0]
     anchor_index = first_engagement_index
-
-    
-
     
 
     for i in range(anchor_index, len(timeline_df)):
@@ -44,11 +41,15 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
         #if the day is scheduled
         if (i - anchor_index) % frequency_denominator == 0:
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP", "UNKNOWN"]:
+                #preserve these values
                 continue
             
             
         else:
+
+            #if any engagement entry appears on non-scheduled day that means anchor is shifting  
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP"]:
+
 
                 #anchor shift detcted
                 anchor_index = i
@@ -57,6 +58,8 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
                 
     return timeline_df, first_engagement_index
 
+
+# create df for particular states
 def create_state_views(timeline_df, first_engagement_index):
     if first_engagement_index is None:
         empty_df = pd.DataFrame(columns=["Date", "Value"])
@@ -73,6 +76,7 @@ def create_state_views(timeline_df, first_engagement_index):
     active_df = engagement_df[engagement_df["Value"] != "SKIP"] # filter out skip
     return scheduled_df, engagement_df, active_df
 
+# calculate metrics
 def calculate_binary_metrics(active_df):
     total_days = len(active_df)
     total_yes = (active_df["Value"] == "YES_MANUAL").sum()
@@ -105,7 +109,7 @@ def calculate_binary_metrics(active_df):
 
 
 
-# current streak
+    # current streak
     current_streak = 0
     for value in reversed(active_df["Value"].tolist()):
         if value == "YES_MANUAL":
@@ -113,7 +117,7 @@ def calculate_binary_metrics(active_df):
         else:
             break
 
-#failures
+    #failures
     failures = 0
     for value in active_df["Value"]:
         if value == "NO":
@@ -135,36 +139,14 @@ def calculate_binary_metrics(active_df):
 
 
 
-
+# api response
 def build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df ):
 
-    # Create an active-entry dataset.
-    # We keep only intentional behavioral states:
-    # YES_MANUAL -> user completed the habit
-    # NO -> user explicitly failed
-    # SKIP -> user intentionally skipped
-    #
-    # YES_AUTO and UNKNOWN are ignored because they are not considered
-    # reliable behavioral signals for this context layer.
-    #
     # .copy() is used because filtering can sometimes return a view
     # of the original dataframe instead of a completely independent dataframe.
     # If we later modify that view, it can accidentally affect the original data.
     # Using .copy() creates a safe independent dataframe.
     # active_df = raw_df[raw_df["Value"].isin(["YES_MANUAL", "NO", "SKIP"])].copy()
-
-    # Convert the Date column into datetime format.
-    # This allows proper chronological sorting and date operations.
-    # active_df["Date"] = pd.to_datetime(
-        # active_df["Date"] 
-    # )
-
-    # Sort the dataset from oldest -> newest.
-    # Behavioral analysis depends on correct chronological order.
-    # active_df = active_df.sort_values(by="Date")
-
-    # Main behavior context dictionary.
-    # This stores structured behavioral information separately from metrics.
     behavior_context = {
         "habit_name": habit_name,
         "habit_type": habit_type,
@@ -268,14 +250,7 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
                     "next_decisive_outcome": next_decisive_outcome
                 })
 
-                # IMPORTANT:
-                # j now points to the first unconsumed non-SKIP state.
-                #
-                # We jump directly to j instead of doing i += 1.
-                #
-                # This prevents revisiting SKIP states that already belong
-                # to the disengagement region we just processed.
-                #
+                
                 # This is region/state traversal rather than simple row traversal.
                 i = j
 
@@ -284,71 +259,3 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
 
     # Return the final structured behavior context.
     return behavior_context
-
-
-
-
-
-
-
-
-
-
-
-    
-                
-
-
-            
-
-
-
-
-
-
-
-        
-
-
-        
-
-        
-        
-        
-
-        
-        
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    
-                    
-                
-
-             
-
-                
-
-            
-
-
-
-
-    
-
-
-
-

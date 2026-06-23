@@ -51,14 +51,8 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
             metrics = calculate_binary_metrics(active_df)
             behavior_context = build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df )
             
-            
-            
-            
             #unpacking is position based not name based
-                
-                
-            
-
+        
         elif row["Type"] == "NUMERICAL":
             if row["Target Type"] != "AT_LEAST":
                 return {"error": "only AT_LEAST target type is supported for NUMERICAL habits"}
@@ -68,7 +62,7 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
             timeline_df = reconstruct_timeline(raw_df)
             normalise_df = normalise_numerical_states(timeline_df)
             windows = extract_windows(normalise_df, frequency_denominator, target_value)
-            #
+            # for debugging
             print(len(windows))
 
             for window in windows:
