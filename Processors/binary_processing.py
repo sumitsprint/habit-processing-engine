@@ -1,16 +1,10 @@
-#raw_df 
-#  | 
-#  | ----metrics pipeline, 
-#  | ----behavior pipeline
-
 import pandas as pd
 from Processors.utils import parse_dates
 
 
 # construct the timeline
 def reconstruct_timeline_binary(raw_df, frequency_denominator):
-    raw_df = raw_df.copy()
-
+    
     #after filtering pandas sometimes returns a view and sometimes a new df 
     # the behavior is not always obvious
     raw_df = raw_df[raw_df["Value"] != "YES_AUTO"].copy() 
@@ -38,7 +32,7 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
 
     for i in range(anchor_index, len(timeline_df)):
 
-        #if the day is scheduled
+        # if the day is scheduled
         if (i - anchor_index) % frequency_denominator == 0:
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP", "UNKNOWN"]:
                 #preserve these values
@@ -102,6 +96,8 @@ def calculate_binary_metrics(active_df):
             if temp_streak > max_streak:
                 max_streak = temp_streak
                 start_date = start_date_temp
+
+                #keep updating end date on the fly
                 end_date = date
 
         else:
@@ -142,11 +138,6 @@ def calculate_binary_metrics(active_df):
 # api response
 def build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df ):
 
-    # .copy() is used because filtering can sometimes return a view
-    # of the original dataframe instead of a completely independent dataframe.
-    # If we later modify that view, it can accidentally affect the original data.
-    # Using .copy() creates a safe independent dataframe.
-    # active_df = raw_df[raw_df["Value"].isin(["YES_MANUAL", "NO", "SKIP"])].copy()
     behavior_context = {
         "habit_name": habit_name,
         "habit_type": habit_type,
@@ -155,8 +146,7 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
 
     }
 
-    # Continue only if interpretable behavioral entries exist.
-    # If the dataframe is empty, we do not infer anything from UNKNOWN values.
+    
     if not active_df.empty:
 
         # First intentional interaction with the habit.
@@ -177,7 +167,7 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
         disengagement_periods = []
 
         # Traversal pointer.
-        # This represents the current unconsumed behavioral state.
+        
         i = 0
 
         # Traverse through the engagement timeline.
@@ -202,13 +192,8 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
                 # This expands the disengagement region forward.
                 j = i + 1
 
-                # Continue consuming consecutive SKIP states.
-                #
-                # j must remain within dataframe bounds to avoid index errors.
-                #
-                # This is state-based traversal:
-                # we are consuming an entire contiguous SKIP region,
-                # not treating each SKIP row as an independent disengagement.
+                
+                # traverse the skip region (region traversal)
                 while (
                     j < len(engagement_df)
                     and engagement_df.iloc[j]["Value"] == "SKIP"
@@ -247,7 +232,8 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
                         next_decisive_date.strftime("%d-%m-%Y")
                         if next_decisive_date is not None
                         else None,
-                    "next_decisive_outcome": next_decisive_outcome
+                    "next_decisive_outcome": next_decisive_outcome if next_decisive_outcome is not None
+                        else None
                 })
 
                 

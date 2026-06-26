@@ -373,8 +373,6 @@ def calculate_numerical_metrics(windows, success_window_count, unresolved_window
                             "end_date": streak_end_date
                             }, 
         "Current_Streak" : int(current_streak),
-
-
     }        
 
 

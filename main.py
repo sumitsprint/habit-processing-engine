@@ -1,14 +1,12 @@
 # Api should be in main.py, and all the processing logic should be in processing.py to keep the code clean and maintainable.
 
 from fastapi import FastAPI, File, UploadFile
-from fastapi.params import Form
-from Processors.utils import load_data
+from Processors.utils import load_data, save_file
 from Processors.binary_processing import reconstruct_timeline_binary, create_state_views, build_behavior_context, calculate_binary_metrics
 from Processors.numerical_processing import reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response, calculate_numerical_metrics
-import os
+
 
 app = FastAPI()
-os.makedirs("temp", exist_ok=True)
 
 
 @app.get("/")
@@ -16,32 +14,20 @@ def root():
     return {"message": "Hello World"}
 
 
-# 🔹 Save uploaded file
-async def save_file(file: UploadFile):
-    file_path = os.path.join("temp", file.filename)
-    with open(file_path, "wb") as buffer:
-        chunk = await file.read(1024)
-        while chunk:
-            buffer.write(chunk)
-            chunk = await file.read(1024)
-    return file_path
-
-
-
-# 🔹 API endpoint
+# API endpoint
  
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
     file_path = await save_file(file)
-    df = load_data(file_path)
-    raw_df = df.copy()
+    raw_df = load_data(file_path)
+    
 
     if habit_name:
         meta_df = load_data("datasets/Meta.csv")
         meta_row = meta_df[meta_df["Name"] == habit_name]
         if meta_row.empty:
             return {"error": "Habit not found in Meta.csv"}
-        row = meta_row.iloc[0]
+        row = meta_row.iloc[0] #series representing that row to access scalar
         habit_type = row["Type"]  
         if row["Type"] == "YES_NO":
             frequency_denominator = int(row['FrequencyDenominator'])

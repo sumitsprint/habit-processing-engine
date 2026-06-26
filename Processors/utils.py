@@ -1,4 +1,20 @@
 import pandas as pd
+from fastapi import UploadFile
+import os
+
+
+os.makedirs("temp", exist_ok=True)
+
+#  Save uploaded file
+async def save_file(file: UploadFile):
+    file_path = os.path.join("temp", file.filename)
+    with open(file_path, "wb") as buffer:
+        chunk = await file.read(1024)
+        while chunk:
+            buffer.write(chunk)
+            chunk = await file.read(1024)
+    return file_path
+
 
 # load data
 def load_data(file_path):
