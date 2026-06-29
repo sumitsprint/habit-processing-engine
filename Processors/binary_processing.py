@@ -54,6 +54,7 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
 
 
 # create df for particular states
+#helper func
 def create_state_views(timeline_df, first_engagement_index):
     if first_engagement_index is None:
         empty_df = pd.DataFrame(columns=["Date", "Value"])
@@ -131,34 +132,44 @@ def calculate_binary_metrics(active_df):
         "total_failures": failures 
     }        
 
-
+#create object 
+def create_behavior_context(habit_name, habit_type,
+                             frequency_denominator, 
+                             first_active_entry=None, 
+                             latest_engagement_entry=None,
+                             disengagement_periods=None):
+    return {
+            "habit_name": habit_name,
+            "habit_type": habit_type,
+            "frequency_denominator": frequency_denominator,
+            "first_active_entry": first_active_entry or {},
+            "latest_engagement_entry": latest_engagement_entry or {},
+            "disengagement_periods": disengagement_periods or [],
+    
+    }
 
 
 
 # api response
 def build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df ):
+    first_active_entry = None
+    latest_engagement_entry = None
+    disengagement_periods = None
 
-    behavior_context = {
-        "habit_name": habit_name,
-        "habit_type": habit_type,
-        "frequency_denominator": frequency_denominator,
-        
-
-    }
-
-    
     if not active_df.empty:
 
         # First intentional interaction with the habit.
-        behavior_context["first_active_entry"] = {
+        first_active_entry = {
             "date": active_df.iloc[0]["Date"].strftime("%d-%m-%Y"),
             "value": active_df.iloc[0]["Value"]
         }
 
+        
+
     if not engagement_df.empty:
 
         # Latest intentional interaction with the habit.
-        behavior_context["latest_engagement_entry"] = {
+        latest_engagement_entry = {
             "date": engagement_df.iloc[-1]["Date"].strftime("%d-%m-%Y"),
             "value": engagement_df.iloc[-1]["Value"]
         }
@@ -240,8 +251,12 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
                 # This is region/state traversal rather than simple row traversal.
                 i = j
 
-        # Attach all disengagement regions into the behavior context.
-        behavior_context["disengagement_periods"] = disengagement_periods
+        
+    behavior_context = create_behavior_context(habit_name, habit_type,
+                            frequency_denominator, 
+                            first_active_entry=first_active_entry, 
+                            latest_engagement_entry=latest_engagement_entry,
+                            disengagement_periods=disengagement_periods)
 
     # Return the final structured behavior context.
     return behavior_context

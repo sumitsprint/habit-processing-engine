@@ -337,7 +337,7 @@ def calculate_numerical_metrics(windows, success_window_count, unresolved_window
     
     #unresolved and skip does not affect metrics
     total_windows = len(windows) - unresolved_window_count
-    consistency = (success_window_count/total_windows) * 100 if total_windows > 0 else 0
+    consistency = (success_window_count / total_windows) * 100 if total_windows > 0 else 0
     
     #longest streak
 

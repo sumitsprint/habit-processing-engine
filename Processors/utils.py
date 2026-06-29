@@ -26,7 +26,7 @@ def load_data(file_path):
 def parse_dates(date_series):
     
     
-    date_series = date_series.dropna().astype(str).str.replace("-", "/")
+    date_series = date_series.dropna().astype(str).str.replace("-", "/") #str is the string accessor just like dt
     sample_date = date_series.iloc[0]
     parts = sample_date.split("/")
 
