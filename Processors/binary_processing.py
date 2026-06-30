@@ -1,5 +1,5 @@
 import pandas as pd
-from Processors.utils import parse_dates
+from utils import parse_dates
 
 
 # construct the timeline
@@ -132,7 +132,7 @@ def calculate_binary_metrics(active_df):
         "total_failures": failures 
     }        
 
-#create object 
+#create object for the api response
 def create_behavior_context(habit_name, habit_type,
                              frequency_denominator, 
                              first_active_entry=None, 
@@ -252,11 +252,10 @@ def build_behavior_context(habit_name, habit_type, frequency_denominator, engage
                 i = j
 
         
-    behavior_context = create_behavior_context(habit_name, habit_type,
-                            frequency_denominator, 
-                            first_active_entry=first_active_entry, 
-                            latest_engagement_entry=latest_engagement_entry,
-                            disengagement_periods=disengagement_periods)
+    behavior_context = create_behavior_context(habit_name, habit_type, frequency_denominator, 
+                                                first_active_entry=first_active_entry, 
+                                                latest_engagement_entry=latest_engagement_entry,
+                                                disengagement_periods=disengagement_periods)
 
-    # Return the final structured behavior context.
+    
     return behavior_context

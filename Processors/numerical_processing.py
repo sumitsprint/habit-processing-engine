@@ -1,12 +1,8 @@
 import pandas as pd
-from Processors.utils import parse_dates
-
-
+from utils import parse_dates
 
 # reconstructing the entire timeline for fixed window logic
 # sparse data to timeline reconstruction
-
-
 
 def reconstruct_timeline(raw_df):
     raw_df["Date"] = parse_dates(raw_df["Date"])

@@ -1,7 +1,7 @@
 # Api should be in main.py, and all the processing logic should be in processing.py to keep the code clean and maintainable.
 
 from fastapi import FastAPI, File, UploadFile
-from Processors.utils import load_data, save_file
+from utils import load_data, save_file
 from Processors.binary_processing import reconstruct_timeline_binary, create_state_views, build_behavior_context, calculate_binary_metrics
 from Processors.numerical_processing import reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response, calculate_numerical_metrics
 
