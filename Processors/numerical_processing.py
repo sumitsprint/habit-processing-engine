@@ -80,8 +80,8 @@ def skip_triggered_extension(normalise_df, starting_point, provisional_end, skip
     return window_df, current_skip_count, extended_end        
 
 
-# determine window status based on target value and presence of unknowns
 #helper func
+# determine window status based on target value and presence of unknowns
 def determine_window_status(target_value, window_df):
     running_sum = evaluate_window(window_df)
     if running_sum >= target_value:
@@ -119,7 +119,7 @@ def create_window_object(
 
             }
 
-
+#create windows
 def extract_windows(normalise_df, frequency_denominator, target_value):
 
     # engagement entries mask 

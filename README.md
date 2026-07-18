@@ -1,6 +1,7 @@
 # Habit Processing Engine
 
-A backend processing engine for evaluating and interpreting habit-tracker datasets.
+A FastAPI backend that process habit tracking csv exports 
+processing engine for evaluating and interpreting habit-tracker datasets.
 
 This project started from a simple idea:
 process my own real-world workout data exported from Loop Habit Tracker App.

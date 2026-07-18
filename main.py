@@ -23,7 +23,7 @@ async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
     
 
     if habit_name:
-        meta_df = load_data("datasets/Meta.csv")
+        meta_df = load_data("Sample_Datasets/Meta.csv")
         meta_row = meta_df[meta_df["Name"] == habit_name]
         if meta_row.empty:
             return {"error": "Habit not found in Meta.csv"}
