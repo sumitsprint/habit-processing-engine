@@ -1,71 +1,89 @@
 # Habit Processing Engine
 
-A FastAPI backend that process habit tracking csv exports 
-processing engine for evaluating and interpreting habit-tracker datasets.
+A FastAPI backend application that processes CSV exports 
+from the Loop Habit Tracker app and returns simple behavioral insights 
+and performance metrics by analyzing the user's habit data.
 
 This project started from a simple idea:
 process my own real-world workout data exported from Loop Habit Tracker App.
 
-While building it, the project gradually evolved into a deeper system-design exercise around:
+## Supported Habit Types
 
-- behavioral state interpretation
-- uncertainty handling
-- temporal window evaluation
-- engagement analysis
-- habit evaluation semantics
+The engine supports two categories of habits: binary habits and numerical habits. 
+Since these habit types have fundamentally different evaluation requirements, 
+the project uses two independent processing pipelines, 
+each designed specifically for its respective habit type.
 
-The goal is not just to process habit data, but to think carefully about what the data actually means.
+### Binary Habits
 
----
+Binary habits are simple yes/no habits where the user
+either performs the habit or does not perform it in a fixed time period.
 
-# Current Features
+Examples:
+- a particular workout (every 7 days)
+- Meditation (every day)
 
-## Binary Habit Processing
+### Numerical Habits
 
-- binary metrics calculation
-- behavior context extraction
-- first active entry detection
-- latest active entry detection
-- disengagement period detection
-- contiguous skip grouping
+Numerical habits measure progress toward a target value within a fixed number of days.
 
-## Numerical Habit Processing
+Examples:
+- Run 10 km every week
+- Read 100 pages every month
+- Drink 3.5 liters of water every day
 
-- timeline reconstruction
-- fixed-window evaluation engine
-- adaptive skip-based window extension
-- UNKNOWN-aware evaluation logic
-- SUCCESS / FAILURE / UNRESOLVED classification
 
----
+## Processing Pipelines
 
-# Key Design Ideas
 
-Some of the core ideas currently being explored in this project:
+### Binary Habit Processing
 
-- separating SKIP from UNKNOWN semantics
-- uncertainty-aware evaluation
-- fixed calendar windows
-- behavioral context vs performance metrics
-- state-based processing logic
-- temporal evaluation systems
+The binary pipeline processes binary (yes/no) habits.
 
----
+Its responsibilities include:
 
-# Project Structure
+- Reconstructing sparse habit data into a complete daily timeline.
+- Calculating performance metrics such as consistency and streaks.
+- Extracting behavioral context, including when the user first started the habit, their most recent interaction, 
+  and periods of disengagement.
+
+### Numerical Habit Processing
+
+The numerical pipeline processes target-based habits.
+
+Its responsibilities include:
+
+- Reconstructing sparse habit data into a complete daily timeline.
+- Normalizing progress values into a consistent representation.
+- Evaluating progress over fixed evaluation periods based on the habit frequency.
+- Calculating performance metrics such as consistency and streaks.
+- Extracting behavioral context, including when the user first started the habit, their most recent interaction, 
+  and periods of disengagement.
+
+
+## Project Structure
 
 ```text
-main.py
-    → API orchestration layer
-
-processors/
-    ├── binary_processing.py
-    ├── numerical_processing.py
-    └── utils.py
-    
+.
+├── main.py                      # FastAPI application
+├── utils.py                     # Shared utility functions
+├── requirements.txt
+│
+├── Processors/
+│   ├── __init__.py
+│   ├── binary_processing.py     # Binary habit processing
+│   └── numerical_processing.py  # Numerical habit processing
+│
+├── Sample_Datasets/
+│   ├── binary(Mon - evening) L-sit.csv
+│   ├── Meta.csv
+│   ├── numerical(Brush).csv
+│   └── numerical(Daily Reading).csv
+│
+└── README.md
 ```
 
-# Tech Stack
+## Tech Stack
 
 - Python
 - Pandas
@@ -73,8 +91,10 @@ processors/
 
 ---
 
-# Status
+## Status
 
-This project is actively evolving.
+The project currently implements binary and numerical habit processing 
+through two independent processing pipelines and serves as a portfolio project 
+demonstrating data processing and API development with FastAPI.
 
-The architecture, semantics, and evaluation logic are still being refined while working with real-world habit datasets and edge cases.
+Future enhancements may be added as the project evolves.
