@@ -1,7 +1,7 @@
 # Habit Processing Engine
 
-A FastAPI backend application that processes CSV exports 
-from the Loop Habit Tracker app and returns simple behavioral insights 
+A FastAPI backend application that processes CSV exports
+from the Loop Habit Tracker app and returns simple behavioral insights
 and performance metrics by analyzing the user's habit data.
 
 This project started from a simple idea:
@@ -9,9 +9,9 @@ process my own real-world workout data exported from Loop Habit Tracker App.
 
 ## Supported Habit Types
 
-The engine supports two categories of habits: binary habits and numerical habits. 
-Since these habit types have fundamentally different evaluation requirements, 
-the project uses two independent processing pipelines, 
+The engine supports two categories of habits: binary habits and numerical habits.
+Since these habit types have fundamentally different evaluation requirements,
+the project uses two independent processing pipelines,
 each designed specifically for its respective habit type.
 
 ### Binary Habits
@@ -20,6 +20,7 @@ Binary habits are simple yes/no habits where the user
 either performs the habit or does not perform it in a fixed time period.
 
 Examples:
+
 - a particular workout (every 7 days)
 - Meditation (every day)
 
@@ -28,13 +29,12 @@ Examples:
 Numerical habits measure progress toward a target value within a fixed number of days.
 
 Examples:
+
 - Run 10 km every week
 - Read 100 pages every month
 - Drink 3.5 liters of water every day
 
-
 ## Processing Pipelines
-
 
 ### Binary Habit Processing
 
@@ -44,7 +44,7 @@ Its responsibilities include:
 
 - Reconstructing sparse habit data into a complete daily timeline.
 - Calculating performance metrics such as consistency and streaks.
-- Extracting behavioral context, including when the user first started the habit, their most recent interaction, 
+- Extracting behavioral context, including when the user first started the habit, their most recent interaction,
   and periods of disengagement.
 
 ### Numerical Habit Processing
@@ -57,9 +57,8 @@ Its responsibilities include:
 - Normalizing progress values into a consistent representation.
 - Evaluating progress over fixed evaluation periods based on the habit frequency.
 - Calculating performance metrics such as consistency and streaks.
-- Extracting behavioral context, including when the user first started the habit, their most recent interaction, 
+- Extracting behavioral context, including when the user first started the habit, their most recent interaction,
   and periods of disengagement.
-
 
 ## Project Structure
 
@@ -93,8 +92,10 @@ Its responsibilities include:
 
 ## Status
 
-The project currently implements binary and numerical habit processing 
-through two independent processing pipelines and serves as a portfolio project 
+The project currently implements binary and numerical habit processing
+through two independent processing pipelines and serves as a portfolio project
 demonstrating data processing and API development with FastAPI.
+
+For detailed information about the architecture, processing pipelines, and design decisions, see the [Documentation](./docs/).
 
 Future enhancements may be added as the project evolves.

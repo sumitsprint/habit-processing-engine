@@ -2,7 +2,7 @@ import pandas as pd
 from utils import parse_dates
 
 
-# construct the timeline
+# construct the complete timeline
 def reconstruct_timeline_binary(raw_df, frequency_denominator):
     
     #after filtering pandas sometimes returns a view and sometimes a new df 
