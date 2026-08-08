@@ -33,6 +33,7 @@ def reconstruct_timeline_binary(raw_df, frequency_denominator):
     for i in range(anchor_index, len(timeline_df)):
 
         # if the day is scheduled
+        # i - anchor_index is the elapsed number of days since the current anchor
         if (i - anchor_index) % frequency_denominator == 0:
             if timeline_df.loc[i, "Value"] in ["YES_MANUAL", "NO", "SKIP", "UNKNOWN"]:
                 #preserve these values
