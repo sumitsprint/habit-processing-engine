@@ -17,13 +17,14 @@ def root():
 # API endpoint
  
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...), habit_name: str = ""):
-    file_path = await save_file(file)
-    raw_df = load_data(file_path)
+async def upload_file(meta_data: UploadFile = File(...), habit_file: UploadFile = File(...), habit_name: str = ""):
+    meta_file_path = await save_file(meta_data)
+    meta_df = load_data(meta_file_path)
+    habit_file_path = await save_file(habit_file)
+    raw_df = load_data(habit_file_path)
     
     #processing pipelines
     if habit_name:
-        meta_df = load_data("Sample_Datasets/Meta.csv")
         meta_row = meta_df[meta_df["Name"] == habit_name]
         if meta_row.empty:
             return {"error": "Habit not found in Meta.csv"}
