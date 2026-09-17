@@ -1,6 +1,6 @@
 # Api should be in main.py, and all the processing logic should be in processing.py to keep the code clean and maintainable.
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile #File is used to specify that the parameter is a file upload
 from utils import load_data, save_file
 from Processors.binary_processing import reconstruct_timeline_binary, create_state_views, build_behavior_context, calculate_binary_metrics
 from Processors.numerical_processing import reconstruct_timeline, normalise_numerical_states, extract_windows, build_api_response, calculate_numerical_metrics
@@ -17,11 +17,30 @@ def root():
 # API endpoint
  
 @app.post("/upload")
-async def upload_file(meta_data: UploadFile = File(...), habit_file: UploadFile = File(...), habit_name: str = ""):
+async def upload_file(meta_data: UploadFile = File(...), habit_file: UploadFile | None = File(None),  
+                      master_file: UploadFile | None = File(None), habit_name: str = ""):
+    
     meta_file_path = await save_file(meta_data)
     meta_df = load_data(meta_file_path)
-    habit_file_path = await save_file(habit_file)
-    raw_df = load_data(habit_file_path)
+
+    if habit_file is not None and master_file is not None:
+        return {"error": "Please provide either habit_file or master_file, not both."}
+
+    if habit_file is None and master_file is None:
+        return {"error": "Please provide either habit_file or master_file."}
+    
+    if habit_file is not None:
+        habit_file_path = await save_file(habit_file) 
+        raw_df = load_data(habit_file_path)
+    else:
+        master_file_path = await save_file(master_file)
+        raw_df = load_data(master_file_path)
+
+        #extract habit
+        raw_df = raw_df[["Date", habit_name]]
+        raw_df = raw_df.rename(columns={habit_name: "Value"}) #name based value passed to arguments
+
+   
     
     #processing pipelines
     if habit_name:
@@ -30,6 +49,8 @@ async def upload_file(meta_data: UploadFile = File(...), habit_file: UploadFile 
             return {"error": "Habit not found in Meta.csv"}
         row = meta_row.iloc[0] #series representing that row to access scalar
         habit_type = row["Type"]  
+
+        # binary habit processing
         if row["Type"] == "YES_NO":
             frequency_denominator = int(row['FrequencyDenominator'])
             
@@ -39,7 +60,8 @@ async def upload_file(meta_data: UploadFile = File(...), habit_file: UploadFile 
             behavior_context = build_behavior_context(habit_name, habit_type, frequency_denominator, engagement_df, active_df )
             
             #unpacking is position based not name based
-        
+
+        #numerical habit processing
         elif row["Type"] == "NUMERICAL":
             if row["Target Type"] != "AT_LEAST":
                 return {"error": "only AT_LEAST target type is supported for NUMERICAL habits"}
