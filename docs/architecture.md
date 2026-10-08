@@ -1,26 +1,36 @@
-                main.py
-                   │
-         ┌─────────┴─────────┐
-         │                   │
-      utils.py        Processors
-                           │
-                ┌──────────┴──────────┐
-                │                     │
-     binary_processing.py   numerical_processing.py
+                    main.py
+                       │
+                       ▼
+                 processing.py
+                       │
+              ┌────────┴────────┐
+              │                 │
+          Processors          utils.py
+              │
+       ┌──────┴──────┐
+       │             │
+binary_processing.py  numerical_processing.py
 
 # Architecture
 
-The project comprises three main components: main.py, utils.py, and the Processors package.
+The project comprises four main components: main.py, processing.py, utils.py, and the Processors package.
 Each component has a clearly defined responsibility. Together, they separate request handling,
-shared utilities, and habit processing into dedicated components of the application.
+processing orchestration, shared utilities, and habit processing into dedicated components of the application.
 
 ## main.py
 
 Responsibilities:
 
 - Handles API requests.
-- Acts as the application's orchestrator.
-- Coordinates the work performed by other modules.
+- Handles file uploads and data loading.
+- Passes prepared data to processing.py.
+- Returns the final JSON response.
+
+## processing.py
+
+Responsibilities:
+
+- Acts as the application's processing orchestrator.
 - Determines the habit type using metadata.
 - Delegates processing to the appropriate pipeline.
 - Returns the final JSON response.
