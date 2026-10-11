@@ -42,7 +42,7 @@ def process_habit_csv(
     raw_df = raw_df.rename(columns={habit_name: "Value"}) #name based value passed to arguments
 
     # core capability
-    result = processing.process_habits(
+    result = processing.process_habit(
         meta_df,
         raw_df,
         habit_name
