@@ -14,3 +14,5 @@ test_binary.py
 practice.txt
 submit.txt
 .env
+test_db.py
+check_metadata.py
