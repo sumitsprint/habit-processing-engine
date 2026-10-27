@@ -1,6 +1,9 @@
 import pandas as pd
 from fastapi import UploadFile
 import os
+from pathlib import Path
+import psycopg
+from dotenv import load_dotenv
 
 
 os.makedirs("temp", exist_ok=True)
@@ -36,6 +39,75 @@ def parse_dates(date_series):
         return pd.to_datetime(date_series, format="%d/%m/%Y")
     else:
         raise ValueError("Unknown date format")
+
+
+# fetch data from database
+load_dotenv()
+DATABASE_URL = os.getenv("EXTERNAL_DATABASE_URL")
+
+
+def fetch_habit_data(habit_name: str):
+    if not DATABASE_URL:
+        raise ValueError("EXTERNAL_DATABASE_URL is missing from .env")
+
+    with psycopg.connect(DATABASE_URL) as connection:
+        meta_query = """
+            SELECT
+                name AS "Name",
+                type AS "Type",
+                frequency_denominator AS "FrequencyDenominator", 
+                target_type AS "Target Type",
+                target_value AS "Target Value"
+            FROM habit_metadata
+            WHERE name = %s
+        """
+
+        meta_rows = connection.execute(meta_query, (habit_name,)).fetchall() # comma makes it a tuple
+
+        meta_df = pd.DataFrame(
+            meta_rows,
+            columns=[
+                "Name",
+                "Type",
+                "FrequencyDenominator",
+                "Target Type",
+                "Target Value",
+            ],
+        )
+
+        habit_query = """
+            SELECT
+                date AS "Date",
+                value AS "Value"
+            FROM habit_data
+            WHERE habit_id = (
+                SELECT habit_id
+                FROM habit_metadata
+                WHERE name = %s
+            )
+            ORDER BY date
+        """
+
+        habit_rows = connection.execute(habit_query, (habit_name,)).fetchall()
+
+        raw_df = pd.DataFrame(
+            habit_rows,
+            columns=["Date", "Value"]
+        )
+
+    return meta_df, raw_df    
+
+
+
+        
+
+
+
+
+
+
+
+
 
 
 
