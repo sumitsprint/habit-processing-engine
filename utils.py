@@ -51,6 +51,8 @@ def fetch_habit_data(habit_name: str):
         raise ValueError("EXTERNAL_DATABASE_URL is missing from .env")
 
     with psycopg.connect(DATABASE_URL) as connection:
+
+        # retrieve meta data
         meta_query = """
             SELECT
                 name AS "Name",
@@ -62,10 +64,10 @@ def fetch_habit_data(habit_name: str):
             WHERE name = %s
         """
 
-        meta_rows = connection.execute(meta_query, (habit_name,)).fetchall() # comma makes it a tuple
+        meta_row = connection.execute(meta_query, (habit_name,)).fetchall() # comma makes it a tuple
 
         meta_df = pd.DataFrame(
-            meta_rows,
+            meta_row,
             columns=[
                 "Name",
                 "Type",
@@ -75,6 +77,7 @@ def fetch_habit_data(habit_name: str):
             ],
         )
 
+        # retrieve habit data
         habit_query = """
             SELECT
                 date AS "Date",
@@ -85,7 +88,7 @@ def fetch_habit_data(habit_name: str):
                 FROM habit_metadata
                 WHERE name = %s
             )
-            ORDER BY date
+            
         """
 
         habit_rows = connection.execute(habit_query, (habit_name,)).fetchall()
@@ -95,8 +98,12 @@ def fetch_habit_data(habit_name: str):
             columns=["Date", "Value"]
         )
 
-    return meta_df, raw_df    
+    return meta_df, raw_df  
 
+# meta_df maybe empty  
+
+# what if we write meta_df .empty here and raise value error
+# next step integration to mcp server
 
 
         

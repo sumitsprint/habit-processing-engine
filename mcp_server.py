@@ -17,32 +17,23 @@ from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
 
 
 # mcp tool
-def process_habit_csv(
-    habit_csv_path: str,
-    meta_csv_path: str,
-    habit_name: str,
+def analyse_habit(
+    habit_name: str
 ) -> dict: 
     """
-    Process a habit using its habit data CSV, metadata CSV,
-    and habit name.
+    Analyse a habit using data retrieved from PostgreSQL.
 
     Args:
-        habit_csv_path: Path to the CSV containing the selected
-            habit's data.
-        meta_csv_path: Path to the metadata CSV of habits.
+        
         habit_name: Name of the habit to process.
 
     Returns:
     A JSON-safe dictionary containing two sections:
     'behavior_context' and 'metrics', each containing a dictionary.
     """
-    meta_df = utils.load_data(meta_csv_path)
-    habit_df = utils.load_data(habit_csv_path)
-
-    #extract habit
-    raw_df = habit_df[["Date", habit_name]]
-    raw_df = raw_df.rename(columns={habit_name: "Value"}) #name based value passed to arguments
-
+    # fetch and process
+    meta_df, raw_df = utils.fetch_habit_data(habit_name)
+    
     # core capability
     result = processing.process_habit(
         meta_df,
@@ -55,7 +46,7 @@ def process_habit_csv(
 
 # adk tool to expose
 # 1. Prepare the ADK Tool
-process_habit_tool_expose = FunctionTool(process_habit_csv) # represent the python function as a  ADK tool. then mcp server exposes this tool
+process_habit_tool_expose = FunctionTool(analyse_habit) # represent the python function as a  ADK tool. then mcp server exposes this tool
 # google adk needs to understand and ineract with tools through an interface it supports
 
 # 2. Create the MCP Server instance
@@ -96,7 +87,7 @@ async def run_mcp_stdio_server():
             read_stream,
             write_stream,
             InitializationOptions(
-                server_name=app.name,
+                server_name=app.name, #
                 server_version="0.1.0",
                 capabilities=app.get_capabilities(
                     notification_options=NotificationOptions(),
@@ -108,5 +99,10 @@ async def run_mcp_stdio_server():
 
 if __name__ == "__main__":
     asyncio.run(run_mcp_stdio_server())
+
+
+
+# next step is adk agent 
+# read documentation
 
 
