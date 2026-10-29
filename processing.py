@@ -33,10 +33,10 @@ def process_habit(meta_df, raw_df, habit_name):
             normalise_df = normalise_numerical_states(timeline_df)
             windows = extract_windows(normalise_df, frequency_denominator, target_value)
             # for debugging
-            print(len(windows))
+            # print(len(windows))
 
-            for window in windows:
-                print(window)
+            # for window in windows:
+            #     print(window)
                 #
             behavior_context, success_window_count, unresolved_window_count = build_api_response(windows, normalise_df, frequency_denominator, target_value, habit_name, habit_type)
             metrics = calculate_numerical_metrics(windows, success_window_count, unresolved_window_count)

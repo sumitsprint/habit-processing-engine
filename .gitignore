@@ -16,3 +16,5 @@ submit.txt
 .env
 test_db.py
 check_metadata.py
+test.py
+.adk/

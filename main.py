@@ -44,6 +44,30 @@ async def upload_file(meta_data: UploadFile = File(...), habit_file: UploadFile 
     result = processing.process_habit(meta_df, raw_df, habit_name)
     return result    
 
+
+#For debugging
+# import utils
+
+# @app.post("/upload")
+# async def upload_file(habit_name: str = ""):
+        # fetch and process
+#     meta_df, raw_df = utils.fetch_habit_data(habit_name)
+        
+#         # core capability
+#     result = processing.process_habit(
+#             meta_df,
+#             raw_df,
+#             habit_name
+#         )
+    
+#     return result
+
+    
+    
+
+    
+
+        
    
     
     
