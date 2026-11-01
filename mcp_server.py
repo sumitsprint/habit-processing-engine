@@ -14,7 +14,10 @@ import mcp.server.stdio
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
 
-
+# wrap the python function as a ADK tool. then mcp server exposes this tool
+def list_habits() -> list[str]:
+    """Return all available habit names from the database."""
+    return utils.fetch_habit_names()
 
 # mcp tool
 def analyse_habit(
@@ -48,6 +51,7 @@ def analyse_habit(
 # 1. Prepare the ADK Tool
 process_habit_tool_expose = FunctionTool(analyse_habit) # represent the python function as a  ADK tool. then mcp server exposes this tool
 # google adk needs to understand and ineract with tools through an interface it supports
+list_habits_tool_expose = FunctionTool(list_habits) # represent the python function as a  ADK tool. then mcp server exposes this tool
 
 # 2. Create the MCP Server instance
 app = Server("habit-processing-mcp")
@@ -56,8 +60,9 @@ app = Server("habit-processing-mcp")
 # 3. Implement the list_tools handler
 @app.list_tools()
 async def list_mcp_tools() -> list[mcp_types.Tool]:
-    mcp_tool_schema = adk_to_mcp_tool_type(process_habit_tool_expose)
-    return [mcp_tool_schema]
+    mcp_tool_schema_process_habit = adk_to_mcp_tool_type(process_habit_tool_expose)
+    mcp_tool_schema_list_habits = adk_to_mcp_tool_type(list_habits_tool_expose)
+    return [mcp_tool_schema_process_habit, mcp_tool_schema_list_habits]
 
 # 4. Implement the call_tool handler
 @app.call_tool()
@@ -75,6 +80,19 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
         except Exception as e:
             error_text = json.dumps({"error": str(e)})
             return [mcp_types.TextContent(type="text", text=error_text)]
+    elif name == list_habits_tool_expose.name:
+        try:
+            # Execute the ADK tool
+            adk_tool_response = await list_habits_tool_expose.run_async(
+                args=arguments, 
+                tool_context=None,
+            )
+            # Format into MCP TextContent
+            response_text = json.dumps(adk_tool_response, indent=2)
+            return [mcp_types.TextContent(type="text", text=response_text)]
+        except Exception as e:
+            error_text = json.dumps({"error": str(e)})
+            return [mcp_types.TextContent(type="text", text=error_text)]    
     else:
         error_text = json.dumps({"error": f"Tool '{name}' not found."})
         return [mcp_types.TextContent(type="text", text=error_text)]

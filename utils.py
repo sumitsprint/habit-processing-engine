@@ -46,6 +46,23 @@ load_dotenv()
 DATABASE_URL = os.getenv("EXTERNAL_DATABASE_URL")
 
 
+# fetch habit names
+def fetch_habit_names():
+    
+    with psycopg.connect(DATABASE_URL) as connection:
+        query = """
+            SELECT name
+            FROM habit_metadata
+            
+        """
+
+        rows = connection.execute(query).fetchall()
+
+    return [row[0] for row in rows]
+
+
+
+# fetch habit data
 def fetch_habit_data(habit_name: str):
     if not DATABASE_URL:
         raise ValueError("EXTERNAL_DATABASE_URL is missing from .env")
