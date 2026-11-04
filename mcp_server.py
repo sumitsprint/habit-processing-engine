@@ -1,8 +1,8 @@
+from google.adk import Agent
 import processing
 import utils
 import asyncio
 import json
-
 
 # mcp library
 from mcp import types as mcp_types
@@ -14,12 +14,12 @@ import mcp.server.stdio
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
 
-# wrap the python function as a ADK tool. then mcp server exposes this tool
+# python function perform the work
 def list_habits() -> list[str]:
     """Return all available habit names from the database."""
     return utils.fetch_habit_names()
 
-# mcp tool
+# python function perform the work
 def analyse_habit(
     habit_name: str
 ) -> dict: 
@@ -105,7 +105,7 @@ async def run_mcp_stdio_server():
             read_stream,
             write_stream,
             InitializationOptions(
-                server_name=app.name, #
+                server_name=app.name, 
                 server_version="0.1.0",
                 capabilities=app.get_capabilities(
                     notification_options=NotificationOptions(),
@@ -119,8 +119,31 @@ if __name__ == "__main__":
     asyncio.run(run_mcp_stdio_server())
 
 
+# what is loop agent and how it is different from llm agent
+
 
 # next step is adk agent 
 # read documentation
 
 
+# 1. Agent receives tool descriptions
+#             |
+
+# Learns that list_habits is available.
+                # |
+
+# 2. Agent requests a tool call
+
+# name = "list_habits"
+
+# 3. MCP server receives the request
+
+# call_mcp_tool(name, arguments)
+
+# 4. Your code matches the name
+
+# name == list_habits_tool_expose.name
+
+# 5. ADK executes the wrapped function
+
+# list_habits_tool_expose.run_async(...)

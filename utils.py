@@ -60,6 +60,8 @@ def fetch_habit_names():
 
     return [row[0] for row in rows]
 
+# print("Fetched habit names :", fetch_habit_names())
+
 
 
 # fetch habit data
