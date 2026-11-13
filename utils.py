@@ -51,20 +51,20 @@ def fetch_habit_names():
     
     with psycopg.connect(DATABASE_URL) as connection:
         query = """
-            SELECT name
+            SELECT name, type
             FROM habit_metadata
             
         """
 
         rows = connection.execute(query).fetchall()
 
-    return [row[0] for row in rows]
+    return [{"name": row[0], "type": row[1]} for row in rows]
 
 # print("Fetched habit names :", fetch_habit_names())
 
 
 
-# fetch habit data
+# data retrieval function for MCP server integration
 def fetch_habit_data(habit_name: str):
     if not DATABASE_URL:
         raise ValueError("EXTERNAL_DATABASE_URL is missing from .env")

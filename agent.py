@@ -21,7 +21,7 @@ MODEL = LiteLlm(
 )
 
 
-MCP_SERVER_SCRIPT = str(Path(__file__).parent / "mcp_server.py") # explain path
+MCP_SERVER_SCRIPT = str(Path(__file__).parent / "mcp_server.py") 
 
 
 habit_processing_tools = McpToolset(
@@ -34,61 +34,65 @@ habit_processing_tools = McpToolset(
 )
 
 # define a class
-
 class HabitResolution(BaseModel):
     status: Literal["matched", "not_found", "ambiguous", "list_all"]
     habit_name: str | None = None
-    candidates: list[str] | None = None
+    habit_type: Literal["YES_NO", "NUMERICAL"] | None = None
+    candidates: list[dict] | None = None
     message: str | None = None
 
 
 habit_resolver_agent = LlmAgent(
     name="habit_resolver",
     model=MODEL,
-    description="Identifies the database habit matching the user's request, or returns all available habits.",
+    description="Identifies the database habit name matching the user's request, or returns all available habits along with their types.",
     instruction="""You are a Habit Name Resolution Agent. Your sole responsibility is to map a user's informal habit query to the exact habit name stored in the database, or list all available habits if requested.
 
 ### Workflow:
-1. Call the `list_habits` tool to retrieve the complete list of available habit names from the database.
-2. If the user asks to see or list all available habits, populate the output schema with all retrieved habits.
-3. Otherwise, compare the user's requested habit against the retrieved list using semantic and substring matching.
-4. Determine the status and populate the output schema according to the Decision Rules below.
+1. Call the `list_habits` tool to retrieve the list of habit dictionaries (each containing "name" and "type") from the database.
+2. If the user asks to see or list all available habits, populate the output schema with all retrieved habit dictionaries.
+3. Otherwise, compare the user's requested habit against the retrieved list using semantic and substring matching on the "name" field.
+4. Determine the match status and populate the output schema according to the Decision Rules below.
 
 ### Decision Rules:
 - **Status: "list_all"**
   - Trigger: The user asks to see, show, or list all habits (e.g., "what habits do I have?", "list all habits").
   - Set `status` = "list_all"
   - Set `habit_name` = null
-  - Set `candidates` = The complete list of habit names returned by `list_habits`.
+  - Set `habit_type` = null
+  - Set `candidates` = The complete list of habit dictionaries returned by `list_habits`.
   - Set `message` = null
 
 - **Status: "matched"**
-  - Trigger: Exactly ONE habit clearly matches the user's intent.
+  - Trigger: Exactly ONE habit dictionary clearly matches the user's intent.
   - Set `status` = "matched"
-  - Set `habit_name` = The exact name as it appears in the database list.
+  - Set `habit_name` = The exact "name" string from the matched dictionary.
+  - Set `habit_type` = The exact "type" string from the matched dictionary ("YES_NO" or "NUMERICAL").
   - Set `candidates` = null
   - Set `message` = null
 
 - **Status: "ambiguous"**
-  - Trigger: Multiple habits in the database could reasonably match the user's request.
+  - Trigger: Multiple habit dictionaries in the database could reasonably match the user's request.
   - Set `status` = "ambiguous"
   - Set `habit_name` = null
-  - Set `candidates` = List of all potentially matching database habit names.
+  - Set `habit_type` = null
+  - Set `candidates` = List of all potentially matching habit dictionaries.
   - Set `message` = null
 
 - **Status: "not_found"**
   - Trigger: No habit in the database matches the user's query even loosely.
   - Set `status` = "not_found"
   - Set `habit_name` = null
+  - Set `habit_type` = null
   - Set `candidates` = null
   - Set `message` = "No such habit found in the database."
 
 ### Constraints:
-- Never invent, modify, or correct the casing/spelling of the database habit name in `habit_name` or `candidates`. Use the exact strings returned by `list_habits`.
-- Do not perform any habit analysis or calculations yourself; your only job is name resolution and listing.""",
+- Never invent, modify, or correct the casing/spelling of the habit name. Use the exact "name" string returned by `list_habits`.
+- Do not perform any habit analysis or calculations yourself; your only job is name and type resolution.""",
     tools=[habit_processing_tools],
     output_schema=HabitResolution,
-    output_key="habit_resolution_json"
+    output_key="habit_resolution_json",
 )
 
 # agent tool
@@ -123,6 +127,4 @@ You are a Habit Analysis Assistant. Your role is to help users view and analyze 
     tools=[habit_processing_tools, resolver_tool], # adk unpacks everything into a flat list of individual functions
 ) 
 
-# ADK agent and MCP integration
 
-# diff between agent, llm agent and loop agent``

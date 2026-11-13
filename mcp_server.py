@@ -1,6 +1,4 @@
 from google.adk import Agent
-import processing
-import utils
 import asyncio
 import json
 
@@ -14,44 +12,14 @@ import mcp.server.stdio
 from google.adk.tools.function_tool import FunctionTool
 from google.adk.tools.mcp_tool.conversion_utils import adk_to_mcp_tool_type
 
-# python function perform the work
-def list_habits() -> list[str]:
-    """Return all available habit names from the database."""
-    return utils.fetch_habit_names()
-
-# python function perform the work
-def analyse_habit(
-    habit_name: str
-) -> dict: 
-    """
-    Analyse a habit using data retrieved from PostgreSQL.
-
-    Args:
-        
-        habit_name: Name of the habit to process.
-
-    Returns:
-    A JSON-safe dictionary containing two sections:
-    'behavior_context' and 'metrics', each containing a dictionary.
-    """
-    # fetch and process
-    meta_df, raw_df = utils.fetch_habit_data(habit_name)
-    
-    # core capability
-    result = processing.process_habit(
-        meta_df,
-        raw_df,
-        habit_name
-    )
-
-    return result
+# MCP tools
+from mcp_tools import list_habits, analyse_habit, get_habit_docs
 
 
-# adk tool to expose
 # 1. Prepare the ADK Tool
-process_habit_tool_expose = FunctionTool(analyse_habit) # represent the python function as a  ADK tool. then mcp server exposes this tool
-# google adk needs to understand and ineract with tools through an interface it supports
-list_habits_tool_expose = FunctionTool(list_habits) # represent the python function as a  ADK tool. then mcp server exposes this tool
+process_habit_tool_expose = FunctionTool(analyse_habit) 
+list_habits_tool_expose = FunctionTool(list_habits) 
+get_habit_documentation_tool_expose = FunctionTool(get_habit_docs)
 
 # 2. Create the MCP Server instance
 app = Server("habit-processing-mcp")
@@ -62,7 +30,8 @@ app = Server("habit-processing-mcp")
 async def list_mcp_tools() -> list[mcp_types.Tool]:
     mcp_tool_schema_process_habit = adk_to_mcp_tool_type(process_habit_tool_expose)
     mcp_tool_schema_list_habits = adk_to_mcp_tool_type(list_habits_tool_expose)
-    return [mcp_tool_schema_process_habit, mcp_tool_schema_list_habits]
+    mcp_tool_schema_get_habit_documentation = adk_to_mcp_tool_type(get_habit_documentation_tool_expose)
+    return [mcp_tool_schema_process_habit, mcp_tool_schema_list_habits, mcp_tool_schema_get_habit_documentation]
 
 # 4. Implement the call_tool handler
 @app.call_tool()
@@ -92,7 +61,20 @@ async def call_mcp_tool(name: str, arguments: dict) -> list[mcp_types.Content]:
             return [mcp_types.TextContent(type="text", text=response_text)]
         except Exception as e:
             error_text = json.dumps({"error": str(e)})
-            return [mcp_types.TextContent(type="text", text=error_text)]    
+            return [mcp_types.TextContent(type="text", text=error_text)]  
+    elif name == get_habit_documentation_tool_expose.name:
+        try:
+            # Execute the ADK tool
+            adk_tool_response = await get_habit_documentation_tool_expose.run_async(
+                args=arguments, 
+                tool_context=None,
+            )
+            # Format into MCP TextContent
+            response_text = json.dumps(adk_tool_response, indent=2)
+            return [mcp_types.TextContent(type="text", text=response_text)]
+        except Exception as e:
+            error_text = json.dumps({"error": str(e)})
+            return [mcp_types.TextContent(type="text", text=error_text)]      
     else:
         error_text = json.dumps({"error": f"Tool '{name}' not found."})
         return [mcp_types.TextContent(type="text", text=error_text)]
