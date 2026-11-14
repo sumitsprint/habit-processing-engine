@@ -51,7 +51,7 @@ def get_habit_docs(habit_type: str) -> dict:
         A dictionary containing the output fields definitions and processing mechanics.
     """
     if habit_type not in ["YES_NO", "NUMERICAL"]:
-        return "Invalid habit type. Must be 'YES_NO' or 'NUMERICAL'."
+        return {"error": "Invalid habit type. Must be 'YES_NO' or 'NUMERICAL'."}
 
     elif habit_type == "YES_NO":
         processing_path = DOCS_DIR / "binary_processing.md"

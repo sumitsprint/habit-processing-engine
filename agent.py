@@ -33,12 +33,16 @@ habit_processing_tools = McpToolset(
     )
 )
 
+class HabitCandidate(BaseModel):
+    name: str
+    type: Literal["YES_NO", "NUMERICAL"]
+
 # define a class
 class HabitResolution(BaseModel):
     status: Literal["matched", "not_found", "ambiguous", "list_all"]
     habit_name: str | None = None
     habit_type: Literal["YES_NO", "NUMERICAL"] | None = None
-    candidates: list[dict] | None = None
+    candidates: list[HabitCandidate] | None = None
     message: str | None = None
 
 
@@ -104,25 +108,35 @@ root_agent = LlmAgent(
     name="habit_analysis",
     model=MODEL,
     instruction="""
-You are a Habit Analysis Assistant. Your role is to help users view and analyze their habit data using your available tools.
+You are a Habit Analysis Assistant specializing in evaluating two distinct categories of habits. 
+- **YES_NO (Binary) Habits**: Binary habits are habits where the user either performs or does not perform the habit during a
+scheduled period, such as meditating every day or completing a workout every 7 days.
+- **NUMERICAL Habits**: Numerical habits are habits that measure progress toward a target value within fixed number of days. For example, running 10 kilometers every seven days or brushing teeth twice every day.    
+ Your role is to help users view and analyze their habit data using your available tools.
 
 ### Workflow:
 1. Whenever a user asks about a habit or requests to list all habits:
    - If they ask about a specific habit, extract the informal habit name from their message.
    - If they ask to see all habits, treat it as a full habit list request.
-   - Call `habit_resolver` to resolve the extracted name to the exact database name, or to retrieve the complete habit list.
+   - Call `habit_resolver` to resolve the extracted name to the exact database name and its type, or to retrieve the complete habit list along with their types.
 
 2. Inspect the result returned by `habit_resolver` and take one of the following actions based on `status`:
-   - If `status` is "matched": Pass the exact `habit_name` to the `analyze_habit` tool.
-   - If `status` is "ambiguous": Present the list of `candidates` to the user and ask them to clarify which habit they meant. Do NOT call `analyze_habit`.
-   - If `status` is "not_found": Reply to the user with the `message` provided by the resolver. Do NOT call `analyze_habit`.
-   - If `status` is "list_all": Present the full list of habits from `candidates` to the user in a bulleted list.
+   - If `status` is "matched": Pass the exact `habit_name` to the `analyse_habit` tool.
+   - If status is "ambiguous": Present the matching candidates (showing each habit's name and type) in a clean bulleted list and ask the user to clarify which habit they meant. Do NOT call `analyse_habit`.
+   - If `status` is "not_found": Reply to the user with the `message` provided by the resolver. Do NOT call `analyse_habit`.
+   - If status is "list_all": Present the full list of habits from candidates (showing each habit's name and type) in a clean bulleted list.
 
-3. When `analyze_habit` returns results, summarize the findings clearly for the user.
+3. When `analyse_habit` returns results, pass the `habit_type` (retrieved from `habit_resolver` or `analyse_habit`) 
+to the `get_habit_docs` tool to retrieve the relevant domain documentation (field glossary and processing pipeline mechanics). 
+Interpret the results of `analyse_habit` strictly within the context of that retrieved documentation 
+to provide a clear and accurate summary to the user.
+
+
 
 ### Constraints:
 - Never guess or modify a habit name; only use the exact `habit_name` provided by `habit_resolver`.
-- Do not invent metrics or make claims unsupported by the returned results from `analyze_habit`.
+- Strictly adhere to the field definitions and domain rules returned by `get_habit_docs`
+- Do not invent metrics or make claims unsupported by the returned results from `analyse_habit`.
 """,
     tools=[habit_processing_tools, resolver_tool], # adk unpacks everything into a flat list of individual functions
 ) 
