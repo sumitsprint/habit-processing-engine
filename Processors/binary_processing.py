@@ -63,14 +63,15 @@ def create_state_views(timeline_df, first_engagement_index):
         return (
             empty_df,
             empty_df,
+            empty_df,
             empty_df
         )
 
-    post_anchor_df = timeline_df.iloc[first_engagement_index:]
+    post_anchor_df = timeline_df.iloc[first_engagement_index:] # filter out leading unknowns
     scheduled_df = post_anchor_df[post_anchor_df["Value"] != "YES_AUTO"] #filter out yesauto
     engagement_df = scheduled_df[scheduled_df["Value"] != "UNKNOWN"] # filter out unknown
     active_df = engagement_df[engagement_df["Value"] != "SKIP"] # filter out skip
-    return scheduled_df, engagement_df, active_df
+    return post_anchor_df, scheduled_df, engagement_df, active_df
 
 # calculate metrics
 def calculate_binary_metrics(active_df):

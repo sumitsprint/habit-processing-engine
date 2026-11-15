@@ -29,7 +29,7 @@ def reconstruct_timeline(raw_df):
 
 def normalise_numerical_states(timeline_df):
     normalise_df = timeline_df.copy()
-    normalise_df["Value"] = normalise_df["Value"].astype(object)#allow the column to hold mixed types
+    normalise_df["Value"] = normalise_df["Value"].astype(object) # allow the column to hold mixed types
     normalise_df["Value"] = normalise_df["Value"].replace("NO", 0)
     numeric_mask = ~normalise_df["Value"].isin(["SKIP", "UNKNOWN"])
     
