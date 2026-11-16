@@ -1,5 +1,9 @@
 # Numerical Habit Fields Glossary (`NUMERICAL`)
 
+### timeline
+
+- **`timeline`** (`list[str]`): complete timeline of habit formatted as 'DD-MM-YYYY: VALUE' starting from the first engagement date.
+
 ### Behavior Context
 
 - `habit_name`: The exact database name of the habit.
@@ -25,7 +29,3 @@
 - `Consistency`: Percentage score: `(success_window_count / (total_windows - unresolved_window_count)) * 100`.
 - `Longest_Streak`: Highest number of consecutive successful windows where user achieved the target value, with start and end dates.
 - `Current_Streak`: Number of consecutive successful windows leading up to the last completed window.
-
-
-
-

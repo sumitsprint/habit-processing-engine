@@ -125,6 +125,58 @@ def fetch_habit_data(habit_name: str):
 # next step integration to mcp server
 
 
+def fetch_all_habits_data():
+    if not DATABASE_URL:
+            raise ValueError("EXTERNAL_DATABASE_URL is missing from .env")
+
+    with psycopg.connect(DATABASE_URL) as connection:
+        meta_query = """
+                    SELECT
+                        habit_id AS "habit_id",
+                        name AS "Name",
+                        type AS "Type",
+                        frequency_denominator AS "FrequencyDenominator", 
+                        target_type AS "Target Type",
+                        target_value AS "Target Value"
+                    FROM habit_metadata
+                    
+                """
+
+        meta_rows = connection.execute(meta_query).fetchall()
+        meta_df = pd.DataFrame(
+                    meta_rows,
+                    columns=[
+                        "habit_id",
+                        "Name",
+                        "Type",
+                        "FrequencyDenominator",
+                        "Target Type",
+                        "Target Value",
+                    ],
+                )
+
+        habits_query = """
+                    SELECT
+                        habit_id,
+                        date AS "Date",
+                        value AS "Value"
+                    FROM habit_data
+                    
+                    """
+        habits_rows = connection.execute(habits_query).fetchall()
+        habits_df = pd.DataFrame(
+                    habits_rows,
+                    columns=["habit_id", "Date", "Value"]
+                )
+        return meta_df, habits_df
+
+        
+
+
+
+
+
+
         
 
 

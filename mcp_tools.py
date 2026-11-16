@@ -22,8 +22,10 @@ def analyse_habit(
         habit_name: Name of the habit to process.
 
     Returns:
-    A JSON-safe dictionary containing two sections:
-    'behavior_context' and 'metrics', each containing a dictionary.
+    A JSON-safe dictionary containing three sections:
+    - 'timeline': complete timeline of habit formatted as 'DD-MM-YYYY: VALUE' starting from the first engagement date.
+    - 'behavior_context': A dictionary containing structural and temporal metadata for the habit.
+    - 'metrics': A dictionary containing calculated consistency and streak statistics.
     """
     # fetch and process
     meta_df, raw_df = utils.fetch_habit_data(habit_name)

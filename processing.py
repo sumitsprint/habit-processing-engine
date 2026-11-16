@@ -41,7 +41,7 @@ def process_habit(meta_df, raw_df, habit_name):
             return {"error": "Unsupported habit type"}
 
     if row["Type"] == "YES_NO":
-        timeline_strings = (post_anchor_df["Date"].dt.strftime("%d-%m-%Y") + ": " + post_anchor_df["Value"].astype(str))
+        timeline_strings = (post_anchor_df["Date"].dt.strftime("%d-%m-%Y") + ": " + post_anchor_df["Value"].astype(str)) # vectorised operation to create timeline strings
     else:
         engagement_mask = ~normalise_df["Value"].isin(["UNKNOWN"])
         if not engagement_mask.any():
